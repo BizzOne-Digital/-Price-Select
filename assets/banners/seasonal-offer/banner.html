@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Price-Select Seasonal Offer</title>
+<!-- Open as banner.html#editorial | #type | #minimal. 1080x1080 Meta feed. -->
+<style>
+  :root { --ink:#0b0d10; --midnight:#07111f; --ivory:#f4f0e8; --gold:#d6c39a; --gold-deep:#8a6a2f; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { width:1080px; height:1080px; overflow:hidden; }
+  body { font-family:Arial, Helvetica, sans-serif; }
+  .b { position:relative; width:1080px; height:1080px; padding:108px; display:flex; flex-direction:column; justify-content:space-between; }
+  .bg { position:absolute; inset:0; background-size:cover; background-position:center; }
+  .top, .bottom { position:relative; display:flex; justify-content:space-between; align-items:center; }
+  .bottom { align-items:flex-end; }
+  .mark { font-size:22px; font-weight:700; letter-spacing:.2em; }
+  .mark i { font-style:normal; padding:0 10px; color:var(--gold); }
+  .kicker { font-size:18px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; }
+  h1 { position:relative; font-family:Georgia, 'Times New Roman', serif; font-weight:400; letter-spacing:-.06em; line-height:.86; }
+  h1 em { color:var(--gold); }
+  .sub { max-width:430px; font-size:24px; line-height:1.45; }
+  .cta { display:inline-flex; align-items:center; gap:18px; min-height:64px; padding:0 32px; font-size:20px; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; }
+
+  /* 1. Editorial photo: matches the site's offer section */
+  .editorial { color:var(--ivory); background:var(--midnight); }
+  .editorial .bg { background-image:linear-gradient(90deg,rgba(7,17,31,.94),rgba(7,17,31,.35)),url('https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1600&q=85'); }
+  .editorial h1 { font-size:150px; }
+  .editorial .sub { color:rgba(244,240,232,.82); }
+  .editorial .cta { border:2px solid var(--gold); color:var(--ivory); }
+
+  /* 2. Bold type: no photo, the headline is the visual */
+  .type { color:var(--ivory); background:var(--midnight); }
+  .type .bg { background:radial-gradient(circle at 85% 15%,rgba(214,195,154,.22),transparent 55%); }
+  .type h1 { font-size:200px; }
+  .type .sub { color:rgba(244,240,232,.78); }
+  .type .cta { background:var(--gold); color:var(--ink); }
+
+  /* 3. Minimal: ivory, one product, lots of air */
+  .minimal { color:var(--ink); background:var(--ivory); }
+  .minimal .bg { left:auto; width:46%; background-image:url('https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=900&q=85'); }
+  .minimal .mark i, .minimal h1 em { color:var(--gold-deep); }
+  .minimal h1 { font-size:120px; max-width:520px; }
+  .minimal .sub { max-width:400px; color:#3d4347; }
+  .minimal .cta { background:var(--ink); color:var(--ivory); }
+  .minimal .bottom { width:480px; flex-direction:column; align-items:flex-start; gap:40px; }
+</style>
+</head>
+<body>
+<div class="b" id="b">
+  <div class="bg"></div>
+  <div class="top"><span class="mark">PRICE<i>—</i>SELECT</span><span class="kicker">Seasonal selection</span></div>
+  <h1>Buy summer<br>in winter.<br><em>Save.</em></h1>
+  <div class="bottom">
+    <p class="sub">Selected products for the season ahead, at special off-season pricing.</p>
+    <span class="cta">Shop the offer →</span>
+  </div>
+</div>
+<script>document.getElementById('b').classList.add(location.hash.slice(1) || 'editorial')</script>
+</body>
+</html>

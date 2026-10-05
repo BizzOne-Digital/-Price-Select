@@ -1,0 +1,388 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ───────────────────────── Price-Select design tokens ───────────────────────── */
+@theme {
+  --color-midnight: #07111f;
+  --color-obsidian: #0b0d10;
+  --color-ink: #0b0d10;
+  --color-ivory: #f4f0e8;
+  --color-pearl: #e8e4db;
+  --color-stone: #d9d4c8;
+  --color-champagne: #d6c39a;
+  --color-gold: #b89a5a;
+  --color-gold-deep: #8a6c33;
+  --color-slate: #66707c;
+  --color-mist: #9aa2ab;
+  --color-ocean: #123b52;
+  --color-success: #5f8a6e;
+  --color-warning: #c08a3e;
+  --color-danger: #b4574b;
+
+  --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --font-sans: var(--font-manrope), 'Manrope', ui-sans-serif, system-ui, sans-serif;
+
+  --ease-luxe: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-curtain: cubic-bezier(0.77, 0, 0.18, 1);
+
+  --animate-grain: grain 8s steps(10) infinite;
+  --animate-drift: drift 28s ease-in-out infinite alternate;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-scan: scan 7s var(--ease-luxe) infinite;
+}
+
+@theme inline {
+  --color-background: var(--color-ivory);
+  --color-foreground: var(--color-ink);
+  --color-border: rgb(11 13 16 / 0.14);
+  --color-ring: var(--color-gold);
+}
+
+/* Type scale: fluid, art-directed. */
+@utility text-display-1 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(3.6rem, 11.5vw, 13.5rem);
+  line-height: 0.84;
+  letter-spacing: -0.045em;
+}
+@utility text-display-2 {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(3rem, 7.4vw, 8.5rem);
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+}
+@utility text-display-3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.2rem, 4.4vw, 4.75rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+@utility text-display-4 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 2.4vw, 2.5rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+@utility meta {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+@utility container-luxe {
+  width: 100%;
+  margin-inline: auto;
+  max-width: 1680px;
+  padding-inline: clamp(1.25rem, 5vw, 5.5rem);
+}
+@utility section-y {
+  padding-block: clamp(5.5rem, 12vw, 11rem);
+}
+
+/* ───────────────────────── Base ───────────────────────── */
+@layer base {
+  html {
+    background: var(--color-obsidian);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-ivory);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-feature-settings: 'lnum', 'ss01', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+  }
+  ::selection {
+    background: var(--color-champagne);
+    color: var(--color-obsidian);
+  }
+  :focus-visible {
+    outline: 1px solid var(--color-gold);
+    outline-offset: 4px;
+  }
+  em {
+    font-style: italic;
+  }
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+}
+
+/* Accent follows the nearest surface: champagne on dark, deep gold on light. */
+:root,
+.bg-midnight,
+.bg-obsidian {
+  --accent: var(--color-champagne);
+}
+.bg-ivory,
+.bg-pearl {
+  --accent: var(--color-gold-deep);
+}
+
+html[data-intro='seen'] .preloader {
+  display: none;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ───────────────────────── Signature: the selection line ───────────────────────── */
+.sel-line {
+  position: relative;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.18;
+}
+.sel-line--gold {
+  background: linear-gradient(90deg, transparent, var(--color-champagne) 18%, var(--color-gold) 50%, var(--color-champagne) 82%, transparent);
+  opacity: 0.9;
+}
+.sel-mark {
+  display: inline-block;
+  width: 2.25rem;
+  height: 1px;
+  background: var(--color-champagne);
+  vertical-align: middle;
+}
+
+/* Corner brackets: the selection frame motif around featured media. */
+.sel-frame {
+  position: relative;
+}
+.sel-frame::before,
+.sel-frame::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-color: var(--color-champagne);
+  border-style: solid;
+  z-index: 3;
+  pointer-events: none;
+  transition: transform 0.7s var(--ease-luxe), opacity 0.5s;
+}
+.sel-frame::before {
+  top: -9px;
+  left: -9px;
+  border-width: 1px 0 0 1px;
+}
+.sel-frame::after {
+  bottom: -9px;
+  right: -9px;
+  border-width: 0 1px 1px 0;
+}
+
+/* Link with a directional underline. */
+.link-line {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.link-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.6s var(--ease-luxe);
+}
+.link-line:hover::after,
+.link-line:focus-visible::after,
+.link-line[aria-current='page']::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+.link-line--static::after {
+  transform: scaleX(1);
+  opacity: 0.35;
+}
+.link-line--static:hover::after {
+  opacity: 1;
+}
+
+/* ───────────────────────── Ambient layers ───────────────────────── */
+.grain-wrap {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 90;
+}
+.grain {
+  position: absolute;
+  inset: -100%;
+  width: 300%;
+  height: 300%;
+  pointer-events: none;
+  z-index: 90;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: var(--animate-grain);
+}
+.aurora {
+  /* Fills its box and animates background-position, so it can never widen the page. */
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 20% 30%, rgb(18 59 82 / 0.55), transparent 70%),
+    radial-gradient(30% 30% at 80% 70%, rgb(184 154 90 / 0.18), transparent 70%),
+    radial-gradient(35% 40% at 60% 20%, rgb(214 195 154 / 0.08), transparent 70%);
+  background-size: 160% 160%;
+  background-position: 0% 0%;
+  animation: var(--animate-drift);
+}
+
+.scrim-b {
+  background: linear-gradient(0deg, rgb(7 17 31 / 0.92), rgb(7 17 31 / 0.25) 45%, transparent 75%);
+}
+.scrim-l {
+  background: linear-gradient(90deg, rgb(7 17 31 / 0.88), rgb(7 17 31 / 0.35) 55%, rgb(7 17 31 / 0.1));
+}
+.vignette {
+  background: radial-gradient(120% 90% at 50% 40%, transparent 40%, rgb(7 17 31 / 0.7));
+}
+
+/* Custom cursor */
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 100;
+  will-change: transform;
+}
+@media (hover: none), (pointer: coarse) {
+  .cursor-dot,
+  .cursor-ring {
+    display: none !important;
+  }
+}
+html.has-cursor,
+html.has-cursor a,
+html.has-cursor button {
+  cursor: none;
+}
+html.has-cursor input,
+html.has-cursor textarea,
+html.has-cursor select {
+  cursor: text;
+}
+
+/* Hide scrollbars for horizontal rails while keeping them scrollable. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Forms */
+.field {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgb(11 13 16 / 0.22);
+  background: transparent;
+  padding: 0.85rem 0;
+  font-size: 1rem;
+  color: inherit;
+  border-radius: 0;
+  transition: border-color 0.3s;
+}
+.field:focus {
+  outline: none;
+  border-bottom-color: var(--color-gold);
+}
+.field::placeholder {
+  color: rgb(102 112 124 / 0.8);
+}
+.dark-ui .field {
+  border-bottom-color: rgb(244 240 232 / 0.22);
+}
+.dark-ui .field::placeholder {
+  color: rgb(244 240 232 / 0.4);
+}
+select.field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23b89a5a' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 2px center;
+  padding-right: 1.5rem;
+}
+
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, 35%); }
+  90% { transform: translate(-10%, 10%); }
+}
+@keyframes drift {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 80% 60%; }
+  100% { background-position: 40% 100%; }
+}
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+@keyframes scan {
+  0% { transform: translateY(-100%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(100%); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .grain {
+    animation: none;
+  }
+}
