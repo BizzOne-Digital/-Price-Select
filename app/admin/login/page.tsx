@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { Wordmark } from '@/components/site/header'
 import { adminMeta } from '@/components/admin/data'
 import { AdminLoginForm } from '@/components/admin/login-form'
 import { SplitText } from '@/components/motion/primitives'
@@ -16,8 +17,8 @@ export default function AdminLogin() {
 
       <div className="container-luxe flex min-h-svh flex-col py-8">
         <div className="flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 text-[0.72rem] font-bold tracking-[0.3em]" aria-label="Price-Select storefront">
-            PRICE <span className="h-px w-4 bg-champagne" aria-hidden /> SELECT
+          <Link href="/" className="shrink-0" aria-label="Price-Select storefront">
+            <Wordmark className="h-10 md:h-12" />
           </Link>
           <p className="meta text-[0.62rem] text-ivory/40">Staff access</p>
         </div>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Wordmark } from '@/components/site/header'
 import { ArrowLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { ImageReveal, LineReveal, Reveal } from '@/components/motion/primitives'
@@ -14,8 +15,8 @@ export default function SupplierAuthLayout({ children }: { children: ReactNode }
         <div aria-hidden className="absolute inset-0 -z-10 scrim-l opacity-60" />
 
         <div className="flex items-center justify-between gap-6">
-          <Link href="/" className="flex items-center gap-2.5 text-[0.72rem] font-bold tracking-[0.3em]" aria-label="Price-Select storefront">
-            PRICE <span className="h-px w-4 bg-champagne" aria-hidden /> SELECT
+          <Link href="/" className="shrink-0" aria-label="Price-Select storefront">
+            <Wordmark className="h-10 md:h-12" />
           </Link>
           <Link href="/" className="link-line meta text-[0.65rem] text-ivory/70 hover:text-champagne">
             <ArrowLeft className="size-3.5" strokeWidth={1.5} aria-hidden /> Storefront

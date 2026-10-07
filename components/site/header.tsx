@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring } from 'motion/react'
@@ -14,13 +15,7 @@ import { useCart } from '@/components/commerce/cart'
 import { CURTAIN, EASE } from '@/components/motion/primitives'
 
 export function Wordmark({ className }: { className?: string }) {
-  return (
-    <span className={cn('flex items-center gap-2.5 text-[0.78rem] font-bold tracking-[0.32em]', className)}>
-      PRICE
-      <span className="h-px w-5 bg-champagne" aria-hidden />
-      SELECT
-    </span>
-  )
+  return <Image src="/pricelogo.png" alt="Price-Select" width={1672} height={941} priority className={cn('h-12 w-auto rounded-sm md:h-14', className)} />
 }
 
 export function Header() {

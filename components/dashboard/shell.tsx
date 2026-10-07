@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Wordmark } from '@/components/site/header'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Bell, LogOut, Menu, Search, X, type LucideIcon } from 'lucide-react'
@@ -43,8 +44,8 @@ export function DashboardShell({
   const sidebar = (
     <div className="flex h-full flex-col bg-obsidian text-ivory">
       <div className="flex h-20 items-center justify-between border-b border-ivory/10 px-6">
-        <Link href="/" className="flex items-center gap-2.5 text-[0.72rem] font-bold tracking-[0.3em]" aria-label="Price-Select storefront">
-          PRICE <span className="h-px w-4 bg-champagne" aria-hidden /> SELECT
+        <Link href="/" className="shrink-0" aria-label="Price-Select storefront">
+          <Wordmark className="h-10 md:h-12" />
         </Link>
         <button className="grid size-10 place-items-center lg:hidden" onClick={() => setOpen(false)} aria-label="Close navigation">
           <X className="size-4" />

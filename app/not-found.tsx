@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Wordmark } from '@/components/site/header'
 import { ButtonLink } from '@/components/site/ui'
 import { NotFoundDigits } from '@/components/site/not-found-digits'
 import { IMAGES } from '@/lib/img'
@@ -16,8 +17,8 @@ export default function NotFound() {
         <div className="grain" />
       </div>
       <header className="container-luxe flex items-center justify-between py-8">
-        <Link href="/" className="flex items-center gap-2.5 text-[0.78rem] font-bold tracking-[0.32em]" aria-label="Price-Select home">
-          PRICE <span className="h-px w-5 bg-champagne" aria-hidden /> SELECT
+        <Link href="/" className="shrink-0" aria-label="Price-Select home">
+          <Wordmark className="h-10 md:h-12" />
         </Link>
         <span className="eyebrow text-ivory/40">Error 404</span>
       </header>

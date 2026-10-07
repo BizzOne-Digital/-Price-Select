@@ -42,7 +42,7 @@ export function Footer() {
         <div className="grid gap-12 py-16 sm:grid-cols-2 lg:grid-cols-12">
           <div className="lg:col-span-4">
             <Link href="/" aria-label="Price-Select home">
-              <Wordmark className="text-[0.9rem]" />
+              <Wordmark className="h-20 md:h-24" />
             </Link>
             <p className="mt-6 max-w-xs text-sm leading-relaxed text-ivory/55">
               A curated marketplace connecting customers with approved suppliers. Displayed prices exclude applicable taxes and shipping.
