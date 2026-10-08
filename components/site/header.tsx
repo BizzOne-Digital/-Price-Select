@@ -4,9 +4,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring } from 'motion/react'
-import { Search, ShoppingBag, UserRound, X } from 'lucide-react'
+import { ChevronDown, Search, ShoppingBag, UserRound, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { NAV, SITE } from '@/lib/site'
+import { NAV, SIGN_IN, SITE } from '@/lib/site'
 import { categories } from '@/lib/data/categories'
 import { publishedProducts } from '@/lib/data/products'
 import { money } from '@/lib/format'
@@ -25,12 +25,14 @@ export function Header() {
   const [solid, setSolid] = useState(false)
   const [menu, setMenu] = useState(false)
   const [search, setSearch] = useState(false)
+  const [signIn, setSignIn] = useState(false)
   const { count, setOpen } = useCart()
 
   useMotionValueEvent(scrollY, 'change', (v) => setSolid(v > 40))
   useEffect(() => {
     setMenu(false)
     setSearch(false)
+    setSignIn(false)
   }, [pathname])
 
   const active = (href: string) => pathname === href || pathname.startsWith(href + '/')
@@ -63,6 +65,44 @@ export function Header() {
                   </Link>
                 </li>
               ))}
+              <li
+                className="relative"
+                onMouseEnter={() => setSignIn(true)}
+                onMouseLeave={() => setSignIn(false)}
+                onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setSignIn(false)}
+              >
+                <button
+                  type="button"
+                  aria-expanded={signIn}
+                  aria-controls="sign-in-menu"
+                  // Mouse/touch clicks only open (hover already opened it); keyboard (detail 0) toggles.
+                  onClick={(e) => setSignIn((o) => (e.detail === 0 ? !o : true))}
+                  onKeyDown={(e) => e.key === 'Escape' && setSignIn(false)}
+                  className={cn('flex items-center gap-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors', active('/sign-in') ? 'text-champagne' : 'text-ivory/75 hover:text-ivory')}
+                >
+                  Sign In <ChevronDown className={cn('size-3 transition-transform duration-300', signIn && 'rotate-180')} strokeWidth={1.5} aria-hidden />
+                </button>
+                <AnimatePresence>
+                  {signIn && (
+                    <motion.ul
+                      id="sign-in-menu"
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.25, ease: EASE }}
+                      className="absolute -left-5 top-full mt-3 min-w-48 border border-ivory/10 bg-obsidian/95 py-2 backdrop-blur-md before:absolute before:inset-x-0 before:-top-4 before:h-4"
+                    >
+                      {SIGN_IN.map((s) => (
+                        <li key={s.href}>
+                          <Link href={s.href} className="block px-5 py-3 text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-ivory/75 transition-colors hover:text-champagne focus-visible:text-champagne">
+                            {s.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </li>
             </ul>
           </nav>
 
@@ -150,7 +190,13 @@ function MobileMenu({ open, active }: { open: boolean; active: (h: string) => bo
               ))}
             </ul>
             <motion.div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-3 pb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-              <p className="eyebrow col-span-2 mb-2 text-champagne">Departments</p>
+              <p className="eyebrow col-span-2 mb-2 text-champagne">Sign In</p>
+              {SIGN_IN.map((s) => (
+                <Link key={s.href} href={s.href} className="py-1 text-sm text-ivory/80">
+                  {s.label}
+                </Link>
+              ))}
+              <p className="eyebrow col-span-2 mb-2 mt-6 text-champagne">Departments</p>
               {categories.map((c) => (
                 <Link key={c.slug} href={`/categories/${c.slug}`} className="py-1 text-sm text-ivory/70">
                   {c.short}

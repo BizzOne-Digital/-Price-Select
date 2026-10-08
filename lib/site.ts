@@ -14,10 +14,19 @@ export const NAV = [
   { href: '/shop', label: 'Shop' },
   { href: '/categories', label: 'Categories' },
   { href: '/about', label: 'About Us' },
-  { href: '/services', label: 'Services' },
-  { href: '/pricing', label: 'Pricing' },
   { href: '/team', label: 'Our Team' },
   { href: '/contact', label: 'Contact' },
+]
+
+/** Membership tiers, wording as supplied by the client. */
+export const MEMBERSHIPS = [
+  ['Member', '$10 per year', 'Get 10% off eligible purchases.'],
+  ['Member Plus', '$25 per year', 'Get 25% off eligible purchases, can send any product you try to buy we will find the same or similar at 25% less'],
+] as const
+
+export const SIGN_IN = [
+  { href: '/sign-in/members', label: 'Paid Members' },
+  { href: '/sign-in/customers', label: 'Customers' },
 ]
 
 /** Initial placeholder service targets. Must be agreed with suppliers before launch. */

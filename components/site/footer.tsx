@@ -8,13 +8,13 @@ const COLS = [
   {
     title: 'Navigate',
     links: [
-      ['/shop', 'Shop'], ['/categories', 'Categories'], ['/about', 'About Us'], ['/services', 'Services'],
-      ['/pricing', 'Pricing'], ['/team', 'Our Team'], ['/contact', 'Contact'],
+      ['/shop', 'Shop'], ['/categories', 'Categories'], ['/about', 'About Us'], ['/team', 'Our Team'],
+      ['/sign-in/members', 'Sign In · Paid Members'], ['/sign-in/customers', 'Sign In · Customers'],
     ],
   },
-  { title: 'Customer', links: [['/account/orders', 'Orders'], ['/account/returns', 'Returns'], ['/contact', 'Support'], ['/account', 'Account']] },
+  { title: 'Customer', links: [['/contact', 'Contact'], ['/account/track', 'Tracking'], ['/policies/terms', 'Terms & Conditions'], ['/account/orders', 'Orders'], ['/account/returns', 'Returns'], ['/account', 'Account']] },
   { title: 'Supplier', links: [['/supplier/apply', 'Become a Supplier'], ['/supplier/login', 'Supplier Login']] },
-  { title: 'Policies', links: [['/policies/privacy', 'Privacy'], ['/policies/terms', 'Terms'], ['/policies/returns', 'Returns']] },
+  { title: 'Policies', links: [['/policies/privacy', 'Privacy'], ['/policies/returns', 'Returns']] },
 ]
 
 export function Footer() {

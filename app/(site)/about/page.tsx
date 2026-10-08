@@ -2,18 +2,13 @@ import type { Metadata } from 'next'
 import { ImageReveal, LineReveal, Parallax, Reveal, ScrollMarquee, SplitText } from '@/components/motion/primitives'
 import { ButtonLink, Eyebrow, PageHero, SectionHeading } from '@/components/site/ui'
 import { IMAGES } from '@/lib/img'
-import { SITE } from '@/lib/site'
+import { MEMBERSHIPS, SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'About Us',
   description: 'At Price-Select.com, we believe shoppers shouldn’t have to pay inflated prices to get the products they need. Membership options designed to help you save.',
   alternates: { canonical: '/about' },
 }
-
-const MEMBERSHIPS = [
-  ['Member', '$10 per year', 'Get 10% off eligible purchases.'],
-  ['Member Plus', '$25 per year', 'Get 25% off eligible purchases, can send any product you try to buy we will find the same or similar at 25% less'],
-]
 
 const PILLARS = [
   ['Product selection', 'A focused range across very different departments, chosen so every listing earns its place.'],
@@ -153,7 +148,7 @@ export default function AboutPage() {
           <LineReveal gold origin="center" className="mx-auto mt-14 max-w-sm" />
           <Reveal delay={0.3} className="mt-14 flex flex-wrap justify-center gap-4">
             <ButtonLink href="/shop">Shop the selection</ButtonLink>
-            <ButtonLink href="/services" variant="outline-light">Our services</ButtonLink>
+            <ButtonLink href="/sign-in/members" variant="outline-light">Member sign in</ButtonLink>
           </Reveal>
         </div>
       </section>
