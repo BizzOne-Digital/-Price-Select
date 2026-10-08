@@ -6,9 +6,14 @@ import { SITE } from '@/lib/site'
 
 export const metadata: Metadata = {
   title: 'About Us',
-  description: 'Price-Select.com is a curated, multi-supplier marketplace and a business of Jr-Procurement.com: selected products, approved suppliers and transparent pricing in one considered experience.',
+  description: 'At Price-Select.com, we believe shoppers shouldn’t have to pay inflated prices to get the products they need. Membership options designed to help you save.',
   alternates: { canonical: '/about' },
 }
+
+const MEMBERSHIPS = [
+  ['Member', '$10 per year', 'Get 10% off eligible purchases.'],
+  ['Member Plus', '$25 per year', 'Get 25% off eligible purchases, can send any product you try to buy we will find the same or similar at 25% less'],
+]
 
 const PILLARS = [
   ['Product selection', 'A focused range across very different departments, chosen so every listing earns its place.'],
@@ -31,7 +36,6 @@ export default function AboutPage() {
         image={IMAGES.towers}
         imageAlt="Glass towers seen from below, converging into the sky"
         crumbs={[{ href: '/about', label: 'About Us' }]}
-        intro="Price-Select.com is a marketplace built on a simple idea: buying should feel considered. Fewer products, chosen with care, from suppliers who have been approved to sell them."
         size="full"
       />
 
@@ -39,20 +43,33 @@ export default function AboutPage() {
         <div className="container-luxe grid gap-16 lg:grid-cols-12">
           <div className="lg:col-span-5">
             <Reveal>
-              <Eyebrow index="01">Who we are</Eyebrow>
+              <Eyebrow index="01">About us</Eyebrow>
             </Reveal>
-            <SplitText text={'More than\na marketplace.'} italicWords={['marketplace']} className="mt-10 text-display-2 text-obsidian" />
+            <SplitText text={'A better way\nto shop.'} italicWords={['better']} className="mt-10 text-display-2 text-obsidian" />
           </div>
-          <div className="space-y-6 text-lg leading-relaxed text-obsidian/80 lg:col-span-5 lg:col-start-8 lg:pt-24">
+          <div className="space-y-6 text-lg leading-relaxed text-obsidian/80 lg:col-span-6 lg:col-start-7 lg:pt-24">
             <Reveal>
               <p>
-                Price-Select.com is a business of {SITE.parent}. It brings together products from approved suppliers across technology, construction, utility vehicles, mobility, energy, family, home and everyday essentials, and presents them as one clear, considered purchasing experience.
+                At Price-Select.com, we believe shoppers shouldn’t have to pay inflated prices to get the products they need. Our team was tired of seeing everyday goods marked up, so we set out to create a better way to shop.
               </p>
             </Reveal>
             <Reveal delay={0.1}>
-              <p className="text-base text-slate">
-                Customers browse, compare and order in one place. Approved suppliers fulfill directly. Behind the scenes, every order is routed, tracked and supported, so a broad assortment never has to feel complicated.
-              </p>
+              <p>We offer products across categories including electronics, home and garden, construction supplies, mobility, solar energy, and more—with membership options designed to help you save:</p>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <ul className="border-y border-obsidian/12 text-base">
+                {MEMBERSHIPS.map(([name, price, perk]) => (
+                  <li key={name} className="border-b border-obsidian/12 py-5 last:border-b-0">
+                    <span className="font-display text-2xl font-light text-obsidian">{name}</span> <span className="text-gold">— {price}:</span> <span className="text-slate">{perk}</span>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+            <Reveal delay={0.2}>
+              <p>Our goal is simple: help you find what you need at a better price.</p>
+            </Reveal>
+            <Reveal delay={0.25}>
+              <p className="font-display text-2xl font-light italic text-obsidian">Join Price-Select.com and make your membership work for you.</p>
             </Reveal>
           </div>
         </div>
@@ -76,9 +93,33 @@ export default function AboutPage() {
         </ScrollMarquee>
       </section>
 
+      <section className="section-y bg-ivory">
+        <div className="container-luxe grid gap-16 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <Reveal>
+              <Eyebrow index="02">Our Vision</Eyebrow>
+            </Reveal>
+            <SplitText text={'Fairer, more\naffordable shopping.'} italicWords={['affordable']} className="mt-10 text-display-2 text-obsidian" />
+          </div>
+          <div className="space-y-6 text-lg leading-relaxed text-obsidian/80 lg:col-span-6 lg:col-start-7 lg:pt-24">
+            <Reveal>
+              <p>At Price-Select.com, our vision is to make shopping fairer and more affordable. We believe people deserve access to quality products without paying more than they should.</p>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <p>
+                We source products from factories, warehouses, and suppliers around the world, looking for ways to reduce costs and pass the savings on to our customers. Our marketplace brings together a broad range of products—from electronics and home and garden to construction supplies, mobility, and solar energy—so shoppers can find what they need in one place.
+              </p>
+            </Reveal>
+            <Reveal delay={0.2}>
+              <p className="font-display text-2xl font-light italic text-obsidian">Our aim is simple: offer more choice, better value, and a shopping experience that puts customers first.</p>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       <section className="section-y bg-pearl">
         <div className="container-luxe">
-          <SectionHeading index="02" eyebrow="What we stand behind" title={'Eight commitments,\nquietly kept.'} italic={['quietly', 'kept']} />
+          <SectionHeading index="03" eyebrow="What we stand behind" title={'Eight commitments,\nquietly kept.'} italic={['quietly', 'kept']} />
           <div className="mt-20 grid gap-x-16 lg:grid-cols-12">
             <div className="hidden lg:col-span-4 lg:block">
               <div className="sticky top-32">
