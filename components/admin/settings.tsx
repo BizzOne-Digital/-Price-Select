@@ -174,7 +174,7 @@ export function SettingsBoard() {
                       checked={on}
                       disabled={full}
                       onChange={() => setPromo((s) => (on ? Object.fromEntries(Object.entries(s).filter(([k]) => k !== p.slug)) : { ...s, [p.slug]: '' }))}
-                      className="size-4 accent-[#8a6c33]"
+                      className="size-4 accent-[#0f766e]"
                     />
                     <span className="relative size-10 shrink-0 overflow-hidden bg-pearl">
                       <Image src={p.images[0].src} alt="" fill sizes="40px" className="object-cover" />
@@ -401,7 +401,7 @@ export function SettingsBoard() {
           {TO_CONFIRM.map((t) => (
             <li key={t} className="bg-ivory/70">
               <label className="flex min-h-14 cursor-pointer items-center gap-4 px-5">
-                <input type="checkbox" checked={!!checked[t]} onChange={() => setChecked((s) => ({ ...s, [t]: !s[t] }))} className="size-4 accent-[#8a6c33]" />
+                <input type="checkbox" checked={!!checked[t]} onChange={() => setChecked((s) => ({ ...s, [t]: !s[t] }))} className="size-4 accent-[#0f766e]" />
                 <span className={cn('text-sm', checked[t] && 'text-slate line-through')}>{t}</span>
                 <span className="ml-auto">{checked[t] ? <StatusBadge status="resolved" label="Confirmed" /> : <StatusBadge status="pending" label="Open" />}</span>
               </label>

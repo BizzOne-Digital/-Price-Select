@@ -195,7 +195,7 @@ function Cursor() {
             height: label ? 84 : hover ? 46 : 30,
             marginLeft: label ? -42 : hover ? -23 : -15,
             marginTop: label ? -42 : hover ? -23 : -15,
-            backgroundColor: label ? 'rgba(214,195,154,0.95)' : 'rgba(214,195,154,0)',
+            backgroundColor: label ? 'rgba(242,139,130,0.95)' : 'rgba(242,139,130,0)',
             opacity: 1,
           }}
           transition={{ duration: 0.45, ease: EASE }}

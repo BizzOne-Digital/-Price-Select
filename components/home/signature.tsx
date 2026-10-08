@@ -166,38 +166,38 @@ export function FulfillmentDiagram() {
         <desc id="ff-desc">One customer order with three items is split: items A and C route to Supplier A, item B to Supplier B. Each supplier ships separately with tracking.</desc>
         <defs>
           <linearGradient id="ffg" x1="0" x2="1">
-            <stop offset="0" stopColor="#b89a5a" />
-            <stop offset="1" stopColor="#0b0d10" stopOpacity="0.5" />
+            <stop offset="0" stopColor="#0f766e" />
+            <stop offset="1" stopColor="#1f2937" stopOpacity="0.5" />
           </linearGradient>
         </defs>
         {/* order → suppliers */}
         <motion.path d="M170 210 C 290 210, 300 110, 410 110" fill="none" stroke="url(#ffg)" strokeWidth="1" {...draw(0.3)} />
         <motion.path d="M170 210 C 290 210, 300 310, 410 310" fill="none" stroke="url(#ffg)" strokeWidth="1" {...draw(0.45)} />
         {/* suppliers → customer */}
-        <motion.path d="M560 110 C 650 110, 640 200, 700 205" fill="none" stroke="#0b0d10" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 5" {...draw(1.1)} />
-        <motion.path d="M560 310 C 650 310, 640 220, 700 215" fill="none" stroke="#0b0d10" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 5" {...draw(1.25)} />
+        <motion.path d="M560 110 C 650 110, 640 200, 700 205" fill="none" stroke="#1f2937" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 5" {...draw(1.1)} />
+        <motion.path d="M560 310 C 650 310, 640 220, 700 215" fill="none" stroke="#1f2937" strokeOpacity="0.35" strokeWidth="1" strokeDasharray="3 5" {...draw(1.25)} />
 
         <motion.g {...node(0)}>
-          <rect x="20" y="150" width="150" height="120" fill="#0b0d10" />
-          <text x="40" y="182" fill="#d6c39a" fontSize="10" letterSpacing="2.4" fontFamily="var(--font-sans)">ORDER PS-240135</text>
-          <text x="40" y="214" fill="#f4f0e8" fontSize="13" fontFamily="var(--font-sans)">Item A</text>
-          <text x="40" y="234" fill="#f4f0e8" fontSize="13" fontFamily="var(--font-sans)">Item B</text>
-          <text x="40" y="254" fill="#f4f0e8" fontSize="13" fontFamily="var(--font-sans)">Item C</text>
+          <rect x="20" y="150" width="150" height="120" fill="#1f2937" />
+          <text x="40" y="182" fill="#f28b82" fontSize="10" letterSpacing="2.4" fontFamily="var(--font-sans)">ORDER PS-240135</text>
+          <text x="40" y="214" fill="#faf7f2" fontSize="13" fontFamily="var(--font-sans)">Item A</text>
+          <text x="40" y="234" fill="#faf7f2" fontSize="13" fontFamily="var(--font-sans)">Item B</text>
+          <text x="40" y="254" fill="#faf7f2" fontSize="13" fontFamily="var(--font-sans)">Item C</text>
         </motion.g>
         {[
           { y: 70, label: 'SUPPLIER A', items: 'Items A + C', d: 0.8 },
           { y: 270, label: 'SUPPLIER B', items: 'Item B', d: 0.95 },
         ].map((s) => (
           <motion.g key={s.label} {...node(s.d)}>
-            <rect x="410" y={s.y} width="150" height="80" fill="none" stroke="#0b0d10" strokeOpacity="0.25" />
-            <text x="428" y={s.y + 30} fill="#8a6c33" fontSize="10" letterSpacing="2.4" fontFamily="var(--font-sans)">{s.label}</text>
-            <text x="428" y={s.y + 56} fill="#0b0d10" fontSize="13" fontFamily="var(--font-sans)">{s.items}</text>
+            <rect x="410" y={s.y} width="150" height="80" fill="none" stroke="#1f2937" strokeOpacity="0.25" />
+            <text x="428" y={s.y + 30} fill="#0f766e" fontSize="10" letterSpacing="2.4" fontFamily="var(--font-sans)">{s.label}</text>
+            <text x="428" y={s.y + 56} fill="#1f2937" fontSize="13" fontFamily="var(--font-sans)">{s.items}</text>
           </motion.g>
         ))}
         <motion.g {...node(1.6)}>
-          <circle cx="720" cy="210" r="22" fill="none" stroke="#b89a5a" />
-          <circle cx="720" cy="210" r="3" fill="#b89a5a" />
-          <text x="720" y="262" textAnchor="middle" fill="#0b0d10" fontSize="10" letterSpacing="2.4" fontFamily="var(--font-sans)">YOU</text>
+          <circle cx="720" cy="210" r="22" fill="none" stroke="#0f766e" />
+          <circle cx="720" cy="210" r="3" fill="#0f766e" />
+          <text x="720" y="262" textAnchor="middle" fill="#1f2937" fontSize="10" letterSpacing="2.4" fontFamily="var(--font-sans)">YOU</text>
         </motion.g>
       </svg>
       <figcaption className="mt-6 grid grid-cols-3 gap-4 meta text-slate">

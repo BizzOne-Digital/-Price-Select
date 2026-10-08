@@ -50,7 +50,7 @@ export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5
             <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-obsidian/50 via-transparent to-transparent opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
           </div>
           {p.tag && (
-            <span className="absolute left-4 top-4 z-[2] bg-ivory/95 px-2.5 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-obsidian">
+            <span className="absolute left-4 top-4 z-[2] bg-coral px-2.5 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-obsidian">
               {p.tag}
             </span>
           )}

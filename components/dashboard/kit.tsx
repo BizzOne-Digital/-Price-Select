@@ -186,7 +186,7 @@ export function Sparkline({ data, className }: { data: number[]; className?: str
   const pts = data.map((v, i) => `${(i / (data.length - 1)) * 80},${22 - ((v - min) / (max - min || 1)) * 20}`).join(' ')
   return (
     <svg viewBox="0 0 80 24" className={cn('h-6 w-20', className)} aria-hidden>
-      <motion.polyline points={pts} fill="none" stroke="#b89a5a" strokeWidth="1.2" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.4, ease: EASE }} />
+      <motion.polyline points={pts} fill="none" stroke="#0f766e" strokeWidth="1.2" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.4, ease: EASE }} />
     </svg>
   )
 }
@@ -206,15 +206,15 @@ export function AreaChart({ data, format = (v) => String(v), label }: { data: { 
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`${label}: ${data.map((d) => `${d.label} ${format(d.value)}`).join(', ')}`} onMouseLeave={() => setHover(null)}>
         <defs>
           <linearGradient id="area-g" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0" stopColor="#b89a5a" stopOpacity="0.28" />
-            <stop offset="1" stopColor="#b89a5a" stopOpacity="0" />
+            <stop offset="0" stopColor="#0f766e" stopOpacity="0.28" />
+            <stop offset="1" stopColor="#0f766e" stopOpacity="0" />
           </linearGradient>
         </defs>
         {[0.25, 0.5, 0.75, 1].map((f) => (
-          <line key={f} x1={P.l} x2={W - P.r} y1={y(max * f)} y2={y(max * f)} stroke="#0b0d10" strokeOpacity="0.06" />
+          <line key={f} x1={P.l} x2={W - P.r} y1={y(max * f)} y2={y(max * f)} stroke="#1f2937" strokeOpacity="0.06" />
         ))}
         <motion.path d={area} fill="url(#area-g)" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.6 }} />
-        <motion.path d={line} fill="none" stroke="#8a6c33" strokeWidth="1.5" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.8, ease: EASE }} />
+        <motion.path d={line} fill="none" stroke="#0f766e" strokeWidth="1.5" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.8, ease: EASE }} />
         {data.map((d, i) => (
           <g key={d.label}>
             <rect x={x(i) - (W / data.length) / 2} y={0} width={W / data.length} height={H} fill="transparent" onMouseEnter={() => setHover(i)} />
@@ -225,9 +225,9 @@ export function AreaChart({ data, format = (v) => String(v), label }: { data: { 
         ))}
         {hover !== null && (
           <g pointerEvents="none">
-            <line x1={x(hover)} x2={x(hover)} y1={P.t} y2={H - P.b} stroke="#b89a5a" strokeOpacity="0.5" />
-            <circle cx={x(hover)} cy={y(data[hover].value)} r="4" fill="#f4f0e8" stroke="#8a6c33" />
-            <text x={Math.min(Math.max(x(hover), 40), W - 40)} y={y(data[hover].value) - 12} textAnchor="middle" fontSize="11" fill="#0b0d10" fontFamily="var(--font-sans)" fontWeight="600">
+            <line x1={x(hover)} x2={x(hover)} y1={P.t} y2={H - P.b} stroke="#0f766e" strokeOpacity="0.5" />
+            <circle cx={x(hover)} cy={y(data[hover].value)} r="4" fill="#faf7f2" stroke="#0f766e" />
+            <text x={Math.min(Math.max(x(hover), 40), W - 40)} y={y(data[hover].value) - 12} textAnchor="middle" fontSize="11" fill="#1f2937" fontFamily="var(--font-sans)" fontWeight="600">
               {format(data[hover].value)}
             </text>
           </g>
@@ -262,9 +262,9 @@ export function Ring({ value, label, size = 120 }: { value: number; label: strin
   return (
     <figure className="flex flex-col items-center">
       <svg viewBox="0 0 120 120" width={size} height={size} role="img" aria-label={`${label}: ${value}%`}>
-        <circle cx="60" cy="60" r={r} fill="none" stroke="#0b0d10" strokeOpacity="0.08" strokeWidth="2" />
-        <motion.circle cx="60" cy="60" r={r} fill="none" stroke="#b89a5a" strokeWidth="2" strokeLinecap="round" transform="rotate(-90 60 60)" strokeDasharray={c} initial={{ strokeDashoffset: c }} whileInView={{ strokeDashoffset: c * (1 - value / 100) }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE }} />
-        <text x="60" y="66" textAnchor="middle" fontSize="22" fontFamily="var(--font-display)" fill="#0b0d10">
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#1f2937" strokeOpacity="0.08" strokeWidth="2" />
+        <motion.circle cx="60" cy="60" r={r} fill="none" stroke="#0f766e" strokeWidth="2" strokeLinecap="round" transform="rotate(-90 60 60)" strokeDasharray={c} initial={{ strokeDashoffset: c }} whileInView={{ strokeDashoffset: c * (1 - value / 100) }} viewport={{ once: true }} transition={{ duration: 1.6, ease: EASE }} />
+        <text x="60" y="66" textAnchor="middle" fontSize="22" fontFamily="var(--font-display)" fill="#1f2937">
           {value}%
         </text>
       </svg>

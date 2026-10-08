@@ -8,8 +8,9 @@ import { ImageReveal, LineReveal, Reveal, SplitText } from '@/components/motion/
 /* ───────── Buttons: rectangular, hairline, with a wipe fill and a travelling arrow ───────── */
 type Variant = 'light' | 'dark' | 'outline-light' | 'outline-dark' | 'gold'
 const VARIANTS: Record<Variant, { base: string; fill: string; hover: string }> = {
-  light: { base: 'bg-ivory text-obsidian border-ivory', fill: 'bg-champagne', hover: 'group-hover:text-obsidian' },
-  dark: { base: 'bg-obsidian text-ivory border-obsidian', fill: 'bg-midnight', hover: 'group-hover:text-champagne' },
+  // Primary buttons are deep teal on both dark and light surfaces.
+  light: { base: 'bg-teal text-white border-teal', fill: 'bg-ivory', hover: 'group-hover:text-obsidian' },
+  dark: { base: 'bg-teal text-white border-teal', fill: 'bg-obsidian', hover: 'group-hover:text-white' },
   'outline-light': { base: 'border-ivory/40 text-ivory', fill: 'bg-ivory', hover: 'group-hover:text-obsidian' },
   'outline-dark': { base: 'border-obsidian/30 text-obsidian', fill: 'bg-obsidian', hover: 'group-hover:text-ivory' },
   gold: { base: 'border-champagne/70 text-ivory', fill: 'bg-champagne', hover: 'group-hover:text-obsidian' },
@@ -61,7 +62,7 @@ export function Button({ children, variant = 'dark', className, icon = true, ...
 
 export function TextLink({ href, children, className, light }: { href: string; children: ReactNode; className?: string; light?: boolean }) {
   return (
-    <Link href={href} className={cn('link-line link-line--static eyebrow', light ? 'text-ivory' : 'text-obsidian', className)}>
+    <Link href={href} className={cn('link-line link-line--static eyebrow', light ? 'text-ivory' : 'text-teal', className)}>
       {children}
       <ArrowRight className="size-3.5" strokeWidth={1.5} />
     </Link>
