@@ -47,8 +47,9 @@ export function Header() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 1.1, delay: 0.2, ease: EASE }}
         className={cn(
-          'fixed inset-x-0 top-0 z-50 text-ivory transition-[background-color,backdrop-filter,padding] duration-700 ease-[var(--ease-luxe)]',
-          solid || menu ? 'bg-obsidian/88 py-4 backdrop-blur-md' : 'bg-transparent py-6 md:py-8',
+          'fixed inset-x-0 top-0 z-50 transition-[background-color,backdrop-filter,padding] duration-700 ease-[var(--ease-luxe)]',
+          'text-obsidian',
+          menu || solid ? 'bg-ivory/95 py-4 backdrop-blur-md' : 'bg-ivory/90 py-6 md:py-8',
         )}
       >
         <div className="container-luxe flex items-center justify-between gap-6">
@@ -60,7 +61,7 @@ export function Header() {
             <ul className="flex items-center gap-8 xl:gap-10">
               {NAV.map((n) => (
                 <li key={n.href}>
-                  <Link href={n.href} aria-current={active(n.href) ? 'page' : undefined} className={cn('link-line text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors', active(n.href) ? 'text-champagne' : 'text-ivory/75 hover:text-ivory')}>
+                  <Link href={n.href} aria-current={active(n.href) ? 'page' : undefined} className={cn('link-line text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors', active(n.href) ? 'text-teal' : 'text-obsidian/80 hover:text-teal')}>
                     {n.label}
                   </Link>
                 </li>
@@ -78,7 +79,7 @@ export function Header() {
                   // Mouse/touch clicks only open (hover already opened it); keyboard (detail 0) toggles.
                   onClick={(e) => setSignIn((o) => (e.detail === 0 ? !o : true))}
                   onKeyDown={(e) => e.key === 'Escape' && setSignIn(false)}
-                  className={cn('flex items-center gap-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors', active('/sign-in') ? 'text-champagne' : 'text-ivory/75 hover:text-ivory')}
+                  className={cn('flex items-center gap-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors', active('/sign-in') ? 'text-teal' : 'text-obsidian/80 hover:text-teal')}
                 >
                   Sign In <ChevronDown className={cn('size-3 transition-transform duration-300', signIn && 'rotate-180')} strokeWidth={1.5} aria-hidden />
                 </button>
@@ -90,11 +91,11 @@ export function Header() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
                       transition={{ duration: 0.25, ease: EASE }}
-                      className="absolute -left-5 top-full mt-3 min-w-48 border border-ivory/10 bg-obsidian/95 py-2 backdrop-blur-md before:absolute before:inset-x-0 before:-top-4 before:h-4"
+                      className="absolute -left-5 top-full mt-3 min-w-48 border border-obsidian/10 bg-ivory/95 py-2 backdrop-blur-md before:absolute before:inset-x-0 before:-top-4 before:h-4"
                     >
                       {SIGN_IN.map((s) => (
                         <li key={s.href}>
-                          <Link href={s.href} className="block px-5 py-3 text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-ivory/75 transition-colors hover:text-champagne focus-visible:text-champagne">
+                          <Link href={s.href} className="block px-5 py-3 text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-obsidian/75 transition-colors hover:text-teal focus-visible:text-teal">
                             {s.label}
                           </Link>
                         </li>
@@ -132,7 +133,7 @@ export function Header() {
             >
               <span className="eyebrow hidden sm:inline">{menu ? 'Close' : 'Menu'}</span>
               <span className="relative block h-3 w-7" aria-hidden>
-                <span className={cn('absolute left-0 h-px w-full bg-ivory transition-all duration-500', menu ? 'top-1.5 rotate-45' : 'top-0')} />
+                <span className={cn('absolute left-0 h-px w-full bg-current transition-all duration-500', menu ? 'top-1.5 rotate-45' : 'top-0')} />
                 <span className={cn('absolute left-0 h-px bg-champagne transition-all duration-500', menu ? 'top-1.5 w-full -rotate-45' : 'top-3 w-4')} />
               </span>
             </button>
@@ -140,7 +141,7 @@ export function Header() {
         </div>
         {/* Signature selection line doubles as a reading-progress indicator. */}
         <motion.div aria-hidden style={{ scaleX: progress }} className={cn('absolute inset-x-0 bottom-0 h-px origin-left bg-champagne/70 transition-opacity duration-500', solid ? 'opacity-100' : 'opacity-0')} />
-        <div aria-hidden className={cn('absolute inset-x-0 bottom-0 h-px bg-ivory/10 transition-opacity', solid ? 'opacity-100' : 'opacity-60')} />
+        <div aria-hidden className={cn('absolute inset-x-0 bottom-0 h-px bg-obsidian/10 transition-opacity', solid ? 'opacity-100' : 'opacity-60')} />
       </motion.header>
 
       <MobileMenu open={menu} active={active} />
@@ -150,7 +151,7 @@ export function Header() {
 }
 
 function IconBtn({ label, children, onClick, href, className }: { label: string; children: React.ReactNode; onClick?: () => void; href?: string; className?: string }) {
-  const cls = cn('relative grid size-11 place-items-center text-ivory/85 transition-colors hover:text-champagne', className)
+  const cls = cn('relative grid size-11 place-items-center text-obsidian/85 transition-colors hover:text-teal', className)
   return href ? (
     <Link href={href} aria-label={label} className={cls}>
       {children}
@@ -171,7 +172,7 @@ function MobileMenu({ open, active }: { open: boolean; active: (h: string) => bo
           role="dialog"
           aria-modal="true"
           aria-label="Site menu"
-          className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-obsidian pt-28 text-ivory lg:hidden"
+          className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-ivory pt-28 text-obsidian lg:hidden"
           initial={{ clipPath: 'inset(0% 0% 100% 0%)' }}
           animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
           exit={{ clipPath: 'inset(0% 0% 100% 0%)' }}
@@ -181,29 +182,29 @@ function MobileMenu({ open, active }: { open: boolean; active: (h: string) => bo
           <nav aria-label="Mobile" className="container-luxe relative flex-1">
             <ul>
               {[{ href: '/', label: 'Home' }, ...NAV].map((n, i) => (
-                <motion.li key={n.href} className="border-b border-ivory/10" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.05, duration: 0.8, ease: EASE }}>
+                <motion.li key={n.href} className="border-b border-obsidian/10" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 + i * 0.05, duration: 0.8, ease: EASE }}>
                   <Link href={n.href} className="flex items-baseline justify-between py-4">
-                    <span className={cn('font-display text-[2.6rem] font-light leading-none', active(n.href) && n.href !== '/' && 'italic text-champagne')}>{n.label}</span>
-                    <span className="meta text-ivory/40">{String(i + 1).padStart(2, '0')}</span>
+                    <span className={cn('font-display text-[2.6rem] font-light leading-none', active(n.href) && n.href !== '/' && 'italic text-teal')}>{n.label}</span>
+                    <span className="meta text-obsidian/40">{String(i + 1).padStart(2, '0')}</span>
                   </Link>
                 </motion.li>
               ))}
             </ul>
             <motion.div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-3 pb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-              <p className="eyebrow col-span-2 mb-2 text-champagne">Sign In</p>
+              <p className="eyebrow col-span-2 mb-2 text-teal">Sign In</p>
               {SIGN_IN.map((s) => (
-                <Link key={s.href} href={s.href} className="py-1 text-sm text-ivory/80">
+                <Link key={s.href} href={s.href} className="py-1 text-sm text-obsidian/80">
                   {s.label}
                 </Link>
               ))}
-              <p className="eyebrow col-span-2 mb-2 mt-6 text-champagne">Departments</p>
+              <p className="eyebrow col-span-2 mb-2 mt-6 text-teal">Departments</p>
               {categories.map((c) => (
-                <Link key={c.slug} href={`/categories/${c.slug}`} className="py-1 text-sm text-ivory/70">
+                <Link key={c.slug} href={`/categories/${c.slug}`} className="py-1 text-sm text-obsidian/70">
                   {c.short}
                 </Link>
               ))}
-              <Link href="/account" className="col-span-2 mt-6 eyebrow text-ivory/80">Account →</Link>
-              <a href={`mailto:${SITE.email}`} className="col-span-2 text-sm text-ivory/60 break-all">{SITE.email}</a>
+              <Link href="/account" className="col-span-2 mt-6 eyebrow text-obsidian/80">Account →</Link>
+              <a href={`mailto:${SITE.email}`} className="col-span-2 text-sm text-obsidian/60 break-all">{SITE.email}</a>
             </motion.div>
           </nav>
         </motion.div>
@@ -242,7 +243,7 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
           role="dialog"
           aria-modal="true"
           aria-label="Search the selection"
-          className="fixed inset-0 z-[120] overflow-y-auto bg-obsidian/96 text-ivory backdrop-blur-xl"
+          className="fixed inset-0 z-[120] overflow-y-auto bg-ivory/95 text-obsidian backdrop-blur-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -250,7 +251,7 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
         >
           <div className="container-luxe pt-8">
             <div className="flex justify-end">
-              <button onClick={onClose} aria-label="Close search" className="grid size-11 place-items-center text-ivory/70 hover:text-champagne">
+              <button onClick={onClose} aria-label="Close search" className="grid size-11 place-items-center text-obsidian/70 hover:text-teal">
                 <X className="size-5" strokeWidth={1.2} />
               </button>
             </div>
@@ -262,10 +263,10 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
                 onClose()
               }}
             >
-              <label htmlFor="site-search" className="eyebrow text-champagne">
+              <label htmlFor="site-search" className="eyebrow text-teal">
                 Search the selection
               </label>
-              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.8, ease: EASE }} className="mt-6 flex items-center border-b border-ivory/20 focus-within:border-champagne">
+              <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.8, ease: EASE }} className="mt-6 flex items-center border-b border-obsidian/20 focus-within:border-champagne">
                 <input
                   ref={input}
                   id="site-search"
@@ -273,9 +274,9 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Products, brands, departments"
                   autoComplete="off"
-                  className="w-full bg-transparent py-4 font-display text-[clamp(2rem,6vw,5rem)] font-light leading-none placeholder:text-ivory/25 focus:outline-none"
+                  className="w-full bg-transparent py-4 font-display text-[clamp(2rem,6vw,5rem)] font-light leading-none placeholder:text-obsidian/50 focus:outline-none"
                 />
-                <button type="submit" aria-label="Search" className="grid size-12 shrink-0 place-items-center text-champagne">
+                <button type="submit" aria-label="Search" className="grid size-12 shrink-0 place-items-center text-teal">
                   <Search className="size-6" strokeWidth={1.2} />
                 </button>
               </motion.div>
@@ -283,27 +284,27 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
 
             <div className="mt-14 grid gap-14 pb-20 md:grid-cols-12">
               <div className="md:col-span-7">
-                <p className="eyebrow text-ivory/45">{term ? `${hits.length} product${hits.length === 1 ? '' : 's'}` : 'Begin typing to search'}</p>
+                <p className="eyebrow text-obsidian/45">{term ? `${hits.length} product${hits.length === 1 ? '' : 's'}` : 'Begin typing to search'}</p>
                 <ul className="mt-6">
                   {hits.map((p, i) => (
-                    <motion.li key={p.slug} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04, ease: EASE }} className="border-b border-ivory/10">
+                    <motion.li key={p.slug} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04, ease: EASE }} className="border-b border-obsidian/10">
                       <Link href={`/products/${p.slug}`} onClick={onClose} className="group flex items-center justify-between gap-6 py-4">
                         <span>
-                          <span className="block text-base group-hover:text-champagne">{p.name}</span>
-                          <span className="meta text-ivory/40">{p.brand}</span>
+                          <span className="block text-base group-hover:text-teal">{p.name}</span>
+                          <span className="meta text-obsidian/40">{p.brand}</span>
                         </span>
-                        <span className="text-sm tabular-nums text-ivory/70">{money(p.price)}</span>
+                        <span className="text-sm tabular-nums text-obsidian/70">{money(p.price)}</span>
                       </Link>
                     </motion.li>
                   ))}
                 </ul>
               </div>
               <div className="md:col-span-4 md:col-start-9">
-                <p className="eyebrow text-ivory/45">Departments</p>
+                <p className="eyebrow text-obsidian/45">Departments</p>
                 <ul className="mt-6 space-y-3">
                   {cats.map((c) => (
                     <li key={c.slug}>
-                      <Link href={`/categories/${c.slug}`} onClick={onClose} className="font-display text-2xl font-light text-ivory/80 hover:text-champagne">
+                      <Link href={`/categories/${c.slug}`} onClick={onClose} className="font-display text-2xl font-light text-obsidian/80 hover:text-teal">
                         {c.name}
                       </Link>
                     </li>

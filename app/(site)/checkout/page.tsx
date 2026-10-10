@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 export default function Checkout() {
   return (
     <>
-      <section className="bg-midnight text-ivory">
+      <section className="bg-ivory text-obsidian">
         <div className="container-luxe flex flex-wrap items-end justify-between gap-6 pb-10 pt-32 md:pt-36">
           <div>
-            <p className="eyebrow flex items-center gap-3 text-ivory/55">
-              <LockKeyhole className="size-3.5 text-champagne" strokeWidth={1.4} aria-hidden />
+            <p className="eyebrow flex items-center gap-3 text-obsidian/55">
+              <LockKeyhole className="size-3.5 text-teal" strokeWidth={1.4} aria-hidden />
               Secure checkout
             </p>
             <h1 className="mt-4 font-display text-5xl font-light tracking-[-0.03em] md:text-6xl">Checkout</h1>

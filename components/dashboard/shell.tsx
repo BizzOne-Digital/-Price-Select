@@ -42,8 +42,8 @@ export function DashboardShell({
   const isActive = (href: string) => (href === root ? pathname === href : pathname === href || pathname.startsWith(href + '/'))
 
   const sidebar = (
-    <div className="flex h-full flex-col bg-obsidian text-ivory">
-      <div className="flex h-20 items-center justify-between border-b border-ivory/10 px-6">
+    <div className="flex h-full flex-col bg-ivory text-obsidian">
+      <div className="flex h-20 items-center justify-between border-b border-obsidian/10 px-6">
         <Link href="/" className="shrink-0" aria-label="Price-Select storefront">
           <Wordmark className="h-10 md:h-12" />
         </Link>
@@ -51,11 +51,11 @@ export function DashboardShell({
           <X className="size-4" />
         </button>
       </div>
-      <p className="px-6 pt-6 eyebrow text-champagne/80">{product}</p>
+      <p className="px-6 pt-6 eyebrow text-teal/80">{product}</p>
       <nav aria-label={product} className="mt-4 flex-1 overflow-y-auto px-3 pb-6" data-lenis-prevent>
         {nav.map((g, gi) => (
           <div key={gi} className={gi ? 'mt-6' : ''}>
-            {g.group && <p className="px-3 pb-2 meta text-[0.62rem] text-ivory/30">{g.group}</p>}
+            {g.group && <p className="px-3 pb-2 meta text-[0.62rem] text-obsidian/30">{g.group}</p>}
             <ul className="space-y-0.5">
               {g.items.map((n) => {
                 const on = isActive(n.href)
@@ -65,13 +65,13 @@ export function DashboardShell({
                       href={n.href}
                       onClick={() => setOpen(false)}
                       aria-current={on ? 'page' : undefined}
-                      className={cn('group relative flex h-10 items-center gap-3 px-3 text-[0.8rem] transition-colors', on ? 'text-ivory' : 'text-ivory/55 hover:text-ivory')}
+                      className={cn('group relative flex h-10 items-center gap-3 px-3 text-[0.8rem] transition-colors', on ? 'text-obsidian' : 'text-obsidian/55 hover:text-obsidian')}
                     >
                       {on && <motion.span layoutId={`nav-${product}`} className="absolute inset-0 bg-ivory/[0.06]" transition={{ duration: 0.5, ease: EASE }} />}
                       {on && <span className="absolute inset-y-2 left-0 w-px bg-champagne" aria-hidden />}
-                      <n.icon className={cn('relative size-4', on ? 'text-champagne' : 'text-ivory/40 group-hover:text-ivory/70')} strokeWidth={1.4} aria-hidden />
+                      <n.icon className={cn('relative size-4', on ? 'text-teal' : 'text-obsidian/40 group-hover:text-obsidian/70')} strokeWidth={1.4} aria-hidden />
                       <span className="relative flex-1">{n.label}</span>
-                      {!!n.badge && <span className="relative min-w-5 rounded-full bg-champagne/15 px-1.5 text-center text-[10px] tabular-nums text-champagne">{n.badge}</span>}
+                      {!!n.badge && <span className="relative min-w-5 rounded-full bg-champagne/15 px-1.5 text-center text-[10px] tabular-nums text-teal">{n.badge}</span>}
                     </Link>
                   </li>
                 )
@@ -80,14 +80,14 @@ export function DashboardShell({
           </div>
         ))}
       </nav>
-      <div className="border-t border-ivory/10 p-4">
+      <div className="border-t border-obsidian/10 p-4">
         <div className="flex items-center gap-3">
-          <span className="grid size-9 place-items-center rounded-full border border-champagne/40 font-display text-sm text-champagne">{user.initials}</span>
+          <span className="grid size-9 place-items-center rounded-full border border-champagne/40 font-display text-sm text-teal">{user.initials}</span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm">{user.name}</p>
-            <p className="meta text-[0.6rem] text-ivory/40">{user.role}</p>
+            <p className="meta text-[0.6rem] text-obsidian/40">{user.role}</p>
           </div>
-          <Link href="/" aria-label="Sign out" className="grid size-9 place-items-center text-ivory/40 hover:text-champagne">
+          <Link href="/" aria-label="Sign out" className="grid size-9 place-items-center text-obsidian/40 hover:text-teal">
             <LogOut className="size-4" strokeWidth={1.4} />
           </Link>
         </div>
@@ -97,7 +97,7 @@ export function DashboardShell({
 
   return (
     <ToastProvider>
-      <div className="min-h-svh bg-[#f6f3ed] text-obsidian lg:grid lg:grid-cols-[264px_1fr]">
+      <div className="min-h-svh bg-ivory text-obsidian lg:grid lg:grid-cols-[264px_1fr]">
         <a href="#workspace" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:bg-ivory focus:px-4 focus:py-2">
           Skip to content
         </a>
@@ -114,7 +114,7 @@ export function DashboardShell({
         </AnimatePresence>
 
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-obsidian/10 bg-[#f6f3ed]/90 px-4 backdrop-blur md:h-20 md:px-8">
+          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-obsidian/10 bg-ivory/90 px-4 backdrop-blur md:h-20 md:px-8">
             <button className="grid size-10 place-items-center lg:hidden" onClick={() => setOpen(true)} aria-label="Open navigation">
               <Menu className="size-5" strokeWidth={1.4} />
             </button>

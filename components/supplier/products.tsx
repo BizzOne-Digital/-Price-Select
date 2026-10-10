@@ -241,7 +241,7 @@ function NewProduct({ open, onClose, skus, onSubmit }: { open: boolean; onClose:
                   <li key={src} className={cn('relative aspect-square overflow-hidden bg-pearl', i === 0 && 'sel-frame')}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={src} alt={`Preview ${i + 1}: ${d.images[i]?.name}`} className="size-full object-cover" />
-                    {i === 0 && <span className="absolute bottom-1 left-1 bg-obsidian/80 px-1.5 py-0.5 meta text-[0.55rem] text-ivory">Primary</span>}
+                    {i === 0 && <span className="absolute bottom-1 left-1 bg-ivory/95 px-1.5 py-0.5 meta text-[0.55rem] text-obsidian">Primary</span>}
                   </li>
                 ))}
               </ul>

@@ -21,26 +21,26 @@ export default function ValueTemplate() {
   return (
     <>
       {/* Hero: offer on the left, departments on the right */}
-      <section className="relative isolate overflow-hidden bg-midnight text-ivory">
-        <div aria-hidden className="aurora opacity-50" />
+      <section className="relative isolate overflow-hidden bg-ivory text-obsidian">
+        <div aria-hidden className="absolute inset-0 -z-10 bg-ivory/60" />
         <div className="container-luxe relative grid gap-12 pb-16 pt-36 md:pt-44 lg:grid-cols-12 lg:items-center lg:pb-24">
           <div className="lg:col-span-6">
             <Reveal>
-              <Eyebrow light>Members save up to 25%</Eyebrow>
+              <Eyebrow>Members save up to 25%</Eyebrow>
             </Reveal>
             <Reveal delay={0.1}>
               <h1 className="mt-8 font-display text-[clamp(3rem,6.5vw,6.5rem)] font-light leading-[0.92] tracking-[-0.03em]">
-                What you need. <em className="text-champagne">Without</em> the markup.
+                What you need. <em className="text-teal">Without</em> the markup.
               </h1>
             </Reveal>
             <Reveal delay={0.2}>
-              <p className="mt-8 max-w-lg text-lg leading-relaxed text-ivory/70">
+              <p className="mt-8 max-w-lg text-lg leading-relaxed text-obsidian/70">
                 At Price-Select.com, we believe shoppers shouldn’t have to pay inflated prices to get the products they need.
               </p>
             </Reveal>
             <Reveal delay={0.3} className="mt-10 flex flex-wrap gap-4">
               <ButtonLink href="/shop">Shop now</ButtonLink>
-              <ButtonLink href="#membership" variant="gold">See memberships</ButtonLink>
+              <ButtonLink href="#membership" variant="outline-dark">See memberships</ButtonLink>
             </Reveal>
           </div>
           <Stagger className="grid grid-cols-2 gap-3 lg:col-span-6">
@@ -48,10 +48,10 @@ export default function ValueTemplate() {
               <StaggerItem key={c.slug}>
                 <Link href={`/categories/${c.slug}`} className="group relative block aspect-[4/3] overflow-hidden">
                   <Image src={c.image} alt={c.imageAlt} fill sizes="(min-width:1024px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
-                  <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-obsidian/85 via-obsidian/10 to-transparent" />
-                  <span className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-2">
+                  <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-ivory/85 via-ivory/10 to-transparent" />
+                  <span className="absolute inset-x-4 bottom-4 text-obsidian flex items-end justify-between gap-2">
                     <span className="font-display text-xl font-light leading-none sm:text-2xl md:text-3xl">{c.short}</span>
-                    <ArrowUpRight className="size-4 shrink-0 text-champagne" strokeWidth={1.5} aria-hidden />
+                    <ArrowUpRight className="size-4 shrink-0 text-teal" strokeWidth={1.5} aria-hidden />
                   </span>
                 </Link>
               </StaggerItem>
@@ -112,23 +112,23 @@ export default function ValueTemplate() {
       </section>
 
       {/* How it works */}
-      <section className="section-y bg-obsidian text-ivory">
+      <section className="section-y bg-ivory text-obsidian">
         <div className="container-luxe">
           <SectionHeading index="04" eyebrow="How it works" title={'A better way\nto shop.'} italic={['better']} light />
-          <Stagger className="mt-16 grid gap-px bg-ivory/10 md:grid-cols-3">
+          <Stagger className="mt-16 grid gap-px bg-obsidian/10 md:grid-cols-3">
             {STEPS.map(({ icon: Icon, title, text }, i) => (
-              <StaggerItem key={title} className="bg-obsidian p-8 md:p-10">
+              <StaggerItem key={title} className="bg-ivory p-8 md:p-10">
                 <div className="flex items-center justify-between">
-                  <Icon className="size-6 text-champagne" strokeWidth={1.3} aria-hidden />
-                  <span className="meta text-ivory/35">{String(i + 1).padStart(2, '0')}</span>
+                  <Icon className="size-6 text-teal" strokeWidth={1.3} aria-hidden />
+                  <span className="meta text-obsidian/35">{String(i + 1).padStart(2, '0')}</span>
                 </div>
                 <h3 className="mt-10 font-display text-3xl font-light">{title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-ivory/60">{text}</p>
+                <p className="mt-3 text-sm leading-relaxed text-obsidian/60">{text}</p>
               </StaggerItem>
             ))}
           </Stagger>
-          <Reveal className="mt-16 flex flex-wrap items-center justify-between gap-8 border-t border-ivory/10 pt-10">
-            <p className="max-w-xl font-display text-3xl font-light">Our goal is simple: help you find what you need at a <em className="text-champagne">better price.</em></p>
+          <Reveal className="mt-16 flex flex-wrap items-center justify-between gap-8 border-t border-obsidian/10 pt-10">
+            <p className="max-w-xl font-display text-3xl font-light">Our goal is simple: help you find what you need at a <em className="text-teal">better price.</em></p>
             <ButtonLink href="/sign-in/members">Join Price-Select</ButtonLink>
           </Reveal>
         </div>

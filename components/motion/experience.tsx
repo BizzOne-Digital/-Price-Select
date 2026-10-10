@@ -90,7 +90,7 @@ function Preloader() {
           key="preloader"
           role="status"
           aria-label="Loading Price-Select"
-          className="preloader fixed inset-0 z-[200] flex flex-col justify-between overflow-hidden bg-obsidian px-5 py-6 text-ivory md:px-12 md:py-10"
+          className="preloader fixed inset-0 z-[200] flex flex-col justify-between overflow-hidden bg-ivory px-5 py-6 text-obsidian md:px-12 md:py-10"
           exit={{ clipPath: 'inset(0% 0% 100% 0%)' }}
           transition={{ duration: 1.1, ease: CURTAIN }}
         >
@@ -103,7 +103,7 @@ function Preloader() {
             transition={{ duration: 2.4, ease: EASE }}
           />
           <div aria-hidden className="aurora opacity-60" />
-          <div className="relative flex justify-between eyebrow text-ivory/50">
+          <div className="relative flex justify-between eyebrow text-obsidian/50">
             <span>Jr-Procurement.com</span>
             <span>Selected commerce</span>
           </div>
@@ -122,20 +122,20 @@ function Preloader() {
                 animate={{ y: '0%', letterSpacing: '-0.02em', opacity: 1 }}
                 transition={{ duration: 1.3, delay: 0.25, ease: EASE }}
               >
-                Price<span className="text-champagne">—</span>Select
+                Price<span className="text-teal">—</span>Select
               </motion.p>
             </div>
-            <motion.p className="eyebrow text-ivory/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.8 }}>
+            <motion.p className="eyebrow text-obsidian/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.8 }}>
               Just for you
             </motion.p>
           </div>
 
           <div className="relative">
             <div className="mb-4 flex items-end justify-between">
-              <span className="eyebrow text-ivory/50">Opening the selection</span>
+              <span className="eyebrow text-obsidian/50">Opening the selection</span>
               <span className="font-display text-5xl font-light tabular-nums md:text-7xl">{String(pct).padStart(3, '0')}</span>
             </div>
-            <div className="h-px w-full bg-ivory/15">
+            <div className="h-px w-full bg-obsidian/15">
               <div className="h-full bg-champagne" style={{ width: `${pct}%` }} />
             </div>
           </div>

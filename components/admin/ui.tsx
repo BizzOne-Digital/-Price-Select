@@ -36,7 +36,7 @@ export function Drawer({ open, onClose, title, eyebrow, children, footer }: { op
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col bg-[#f6f3ed] shadow-[-40px_0_80px_-30px_rgba(7,17,31,0.35)] focus:outline-none"
+            className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col bg-ivory shadow-[-40px_0_80px_-30px_rgba(7,17,31,0.35)] focus:outline-none"
           >
             <div className="flex items-start justify-between gap-4 border-b border-obsidian/10 px-6 py-6 md:px-8">
               <div className="min-w-0">

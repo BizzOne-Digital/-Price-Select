@@ -11,7 +11,7 @@ export default function TemplatesIndex() {
   return (
     <>
       <PageBand eyebrow="For review" title={'Site\ntemplates.'} italic={['templates.']}>
-        <p className="mt-8 max-w-xl text-sm leading-relaxed text-ivory/60">
+        <p className="mt-8 max-w-xl text-sm leading-relaxed text-obsidian/60">
           Four homepage directions built with the same products, departments and membership offer, plus customer emails and documents. Open each one, then tell us which direction to take forward. Elements can be mixed between templates.
         </p>
       </PageBand>

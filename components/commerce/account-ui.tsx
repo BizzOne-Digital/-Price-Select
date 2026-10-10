@@ -67,7 +67,7 @@ const TONE: Record<string, string> = {
 
 export function Status({ value, light, className }: { value: OrderStatus | CaseStatus; light?: boolean; className?: string }) {
   return (
-    <span className={cn('meta inline-flex items-center gap-2', light ? 'text-ivory/80' : 'text-obsidian/80', className)}>
+    <span className={cn('meta inline-flex items-center gap-2', light ? 'text-obsidian/80' : 'text-obsidian/80', className)}>
       <span className={cn('size-1.5 rounded-full', TONE[value] ?? 'bg-mist')} aria-hidden />
       {titleCase(value)}
     </span>
@@ -109,7 +109,7 @@ export function OrderTimeline({ history, status, light }: { history: Fulfillment
           aria-current={r.done && !rows[i + 1]?.done ? 'step' : undefined}
         >
           {i < rows.length - 1 && (
-            <span aria-hidden className={cn('absolute left-[5px] top-3 h-full w-px', light ? 'bg-ivory/15' : 'bg-obsidian/12')}>
+            <span aria-hidden className={cn('absolute left-[5px] top-3 h-full w-px', light ? 'bg-obsidian/15' : 'bg-obsidian/12')}>
               {r.done && rows[i + 1].done && (
                 <motion.span
                   className="absolute inset-0 origin-top bg-gold"
@@ -124,16 +124,16 @@ export function OrderTimeline({ history, status, light }: { history: Fulfillment
             aria-hidden
             className={cn(
               'relative z-[1] mt-1.5 block size-[11px] rounded-full border',
-              r.terminal ? 'border-danger bg-danger' : r.done ? 'border-gold bg-gold' : light ? 'border-ivory/30 bg-midnight' : 'border-obsidian/25 bg-ivory',
+              r.terminal ? 'border-danger bg-danger' : r.done ? 'border-gold bg-gold' : light ? 'border-obsidian/30 bg-ivory' : 'border-obsidian/25 bg-ivory',
             )}
           />
           <div>
-            <p className={cn('flex flex-wrap items-baseline gap-x-3 text-sm', r.done ? (light ? 'text-ivory' : 'text-obsidian') : light ? 'text-ivory/40' : 'text-slate/60')}>
+            <p className={cn('flex flex-wrap items-baseline gap-x-3 text-sm', r.done ? (light ? 'text-obsidian' : 'text-obsidian') : light ? 'text-obsidian/40' : 'text-slate/60')}>
               <span className="font-medium">{r.label}</span>
-              {r.at && <time dateTime={r.at} className={cn('text-xs tabular-nums', light ? 'text-ivory/45' : 'text-slate')}>{when.format(new Date(r.at))}</time>}
+              {r.at && <time dateTime={r.at} className={cn('text-xs tabular-nums', light ? 'text-obsidian/45' : 'text-slate')}>{when.format(new Date(r.at))}</time>}
               {!r.done && <span className="sr-only">(upcoming)</span>}
             </p>
-            {r.note && <p className={cn('mt-1 text-xs leading-relaxed', light ? 'text-ivory/55' : 'text-slate')}>{r.note}</p>}
+            {r.note && <p className={cn('mt-1 text-xs leading-relaxed', light ? 'text-obsidian/55' : 'text-slate')}>{r.note}</p>}
           </div>
         </motion.li>
       ))}

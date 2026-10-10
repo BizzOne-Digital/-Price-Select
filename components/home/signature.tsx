@@ -31,7 +31,7 @@ export function PriceSelectAssembly() {
   const index = useTransform(p, (v) => String(Math.min(4, Math.floor(v * 5) + 1)).padStart(2, '0'))
 
   return (
-    <section ref={ref} className="relative h-[260vh] bg-obsidian text-ivory" aria-labelledby="assembly-title">
+    <section ref={ref} className="relative h-[260vh] bg-ivory text-obsidian" aria-labelledby="assembly-title">
       <h2 id="assembly-title" className="sr-only">
         Price, value, quality and selection come together as Price-Select.
       </h2>
@@ -39,14 +39,14 @@ export function PriceSelectAssembly() {
         <div aria-hidden className="aurora opacity-50" />
         <motion.div aria-hidden className="absolute left-1/2 top-1/2 size-[60vmin] -translate-x-1/2 -translate-y-1/2 rounded-full bg-champagne/10 blur-[100px]" style={{ opacity: glow }} />
 
-        <div aria-hidden className="container-luxe absolute inset-x-0 top-28 flex justify-between eyebrow text-ivory/40">
+        <div aria-hidden className="container-luxe absolute inset-x-0 top-28 flex justify-between eyebrow text-obsidian/40">
           <span>The philosophy</span>
-          <motion.span className="tabular-nums text-champagne">{index}</motion.span>
+          <motion.span className="tabular-nums text-teal">{index}</motion.span>
         </div>
 
         <div aria-hidden className="relative font-display text-[clamp(3.2rem,12vw,12rem)] font-light leading-none tracking-[-0.04em]">
-          <Word x={valueX} y="-34vh" o={valueO} className="text-ivory/30 italic">Value</Word>
-          <Word x={qualX} y="30vh" o={qualO} className="text-ivory/30 italic">Quality</Word>
+          <Word x={valueX} y="-34vh" o={valueO} className="text-obsidian/30 italic">Value</Word>
+          <Word x={qualX} y="30vh" o={qualO} className="text-obsidian/30 italic">Quality</Word>
           <div className="flex items-center">
             <motion.span style={{ x: priceX, y: priceY }} className="inline-block">
               Price
@@ -54,7 +54,7 @@ export function PriceSelectAssembly() {
             <motion.span style={{ width: dashW }} className="mx-[0.06em] inline-block h-[0.04em] translate-y-[0.06em] bg-champagne" />
             <motion.span style={{ x: selX, y: selY }} className="inline-flex">
               Select
-              <motion.span style={{ width: ionW, opacity: ionO }} className="inline-block overflow-hidden italic text-ivory/50">
+              <motion.span style={{ width: ionW, opacity: ionO }} className="inline-block overflow-hidden italic text-obsidian/50">
                 ion
               </motion.span>
             </motion.span>
@@ -62,8 +62,8 @@ export function PriceSelectAssembly() {
         </div>
 
         <motion.p style={{ opacity: tagO, y: tagY }} className="absolute bottom-[16vh] text-center">
-          <span className="block font-display text-3xl font-light italic text-champagne md:text-5xl">Just for you.</span>
-          <span className="mt-5 block eyebrow text-ivory/50">Intelligent selection, without the noise</span>
+          <span className="block font-display text-3xl font-light italic text-teal md:text-5xl">Just for you.</span>
+          <span className="mt-5 block eyebrow text-obsidian/50">Intelligent selection, without the noise</span>
         </motion.p>
       </div>
     </section>
@@ -97,26 +97,26 @@ export function MarketplaceStory() {
   const bar = useTransform(scrollYProgress, [0, 1], [0, 1])
 
   return (
-    <section ref={ref} className="relative overflow-x-clip bg-midnight text-ivory lg:h-[380vh]" aria-labelledby="story-title">
+    <section ref={ref} className="relative overflow-x-clip bg-ivory text-obsidian lg:h-[380vh]" aria-labelledby="story-title">
       <div className="lg:sticky lg:top-0 lg:flex lg:h-svh lg:flex-col lg:justify-center lg:overflow-hidden">
         <div aria-hidden className="aurora opacity-50" />
         <div className="container-luxe relative pt-28 lg:pt-0">
-          <p className="eyebrow flex items-center gap-4 text-ivory/55">
-            <span className="text-champagne">05</span>
+          <p className="eyebrow flex items-center gap-4 text-obsidian/55">
+            <span className="text-teal">05</span>
             <span className="sel-mark" />
             The marketplace
           </p>
           <h2 id="story-title" className="mt-6 text-display-3">
-            From supply <em className="text-champagne">to selection.</em>
+            From supply <em className="text-teal">to selection.</em>
           </h2>
         </div>
 
         <motion.ol style={{ x }} className="relative mt-14 hidden gap-[6vw] pl-[max(1.25rem,5vw)] lg:flex" aria-label="How the marketplace works">
           {STEPS.map((s) => (
-            <li key={s.n} className="w-[34vw] shrink-0 border-t border-ivory/15 pt-8">
-              <span className="font-display text-[9rem] font-light leading-none text-ivory/[0.08]">{s.n}</span>
+            <li key={s.n} className="w-[34vw] shrink-0 border-t border-obsidian/15 pt-8">
+              <span className="font-display text-[9rem] font-light leading-none text-obsidian/[0.08]">{s.n}</span>
               <h3 className="-mt-10 font-display text-5xl font-light">{s.t}</h3>
-              <p className="mt-6 max-w-sm text-base leading-relaxed text-ivory/65">{s.d}</p>
+              <p className="mt-6 max-w-sm text-base leading-relaxed text-obsidian/65">{s.d}</p>
             </li>
           ))}
           <li className="w-[20vw] shrink-0" aria-hidden />
@@ -124,16 +124,16 @@ export function MarketplaceStory() {
 
         <ol className="container-luxe relative mt-12 space-y-12 pb-24 lg:hidden">
           {STEPS.map((s) => (
-            <motion.li key={s.n} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }} className="border-t border-ivory/15 pt-6">
-              <span className="meta text-champagne">{s.n}</span>
+            <motion.li key={s.n} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }} className="border-t border-obsidian/15 pt-6">
+              <span className="meta text-teal">{s.n}</span>
               <h3 className="mt-3 font-display text-4xl font-light">{s.t}</h3>
-              <p className="mt-4 text-sm leading-relaxed text-ivory/65">{s.d}</p>
+              <p className="mt-4 text-sm leading-relaxed text-obsidian/65">{s.d}</p>
             </motion.li>
           ))}
         </ol>
 
         <div className="container-luxe relative mt-16 hidden lg:block">
-          <div className="h-px bg-ivory/10">
+          <div className="h-px bg-obsidian/10">
             <motion.div className="h-full origin-left bg-champagne" style={{ scaleX: bar }} />
           </div>
         </div>

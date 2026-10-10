@@ -365,7 +365,7 @@ export function CheckoutFlow() {
               <li key={l.slug} className="flex items-center gap-4 text-sm">
                 <span className="relative h-14 w-11 shrink-0 overflow-hidden bg-pearl">
                   <Image src={l.product.images[0].src} alt="" fill sizes="44px" className="object-cover" />
-                  <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center bg-obsidian px-1 text-[9px] text-ivory">{l.qty}</span>
+                  <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center bg-ivory px-1 text-[9px] text-obsidian">{l.qty}</span>
                 </span>
                 <span className="min-w-0 flex-1 truncate text-obsidian">{l.product.name}</span>
                 <span className="tabular-nums text-obsidian">{money(l.unitPrice * l.qty)}</span>

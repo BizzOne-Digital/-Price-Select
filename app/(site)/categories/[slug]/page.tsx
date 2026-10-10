@@ -47,7 +47,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         <Reveal delay={0.85} className="mt-10">
           <ul className="flex flex-wrap gap-x-6 gap-y-2" aria-label={`${c.name} includes`}>
             {c.includes.map((x) => (
-              <li key={x} className="meta flex items-center gap-2 text-ivory/60">
+              <li key={x} className="meta flex items-center gap-2 text-obsidian/60">
                 <span className="size-1 bg-champagne" aria-hidden />
                 {x}
               </li>
@@ -115,23 +115,23 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </div>
       </section>
 
-      <section className="bg-midnight pb-24 pt-20 text-ivory md:pb-32 md:pt-28" aria-labelledby="siblings-title">
+      <section className="bg-ivory pb-24 pt-20 text-obsidian md:pb-32 md:pt-28" aria-labelledby="siblings-title">
         <div className="container-luxe">
           <Eyebrow light>Continue exploring</Eyebrow>
           <h2 id="siblings-title" className="mt-6 text-display-3">
-            Other <em className="text-champagne">departments.</em>
+            Other <em className="text-teal">departments.</em>
           </h2>
-          <LineReveal className="mt-14 text-ivory" />
+          <LineReveal className="mt-14 text-obsidian" />
           <Stagger as="ul" className="grid sm:grid-cols-2 lg:grid-cols-4">
             {siblings.map((s) => (
-              <StaggerItem as="li" key={s.slug} className="border-b border-ivory/10 sm:odd:border-r lg:border-r lg:[&:nth-child(4n)]:border-r-0">
+              <StaggerItem as="li" key={s.slug} className="border-b border-obsidian/10 sm:odd:border-r lg:border-r lg:[&:nth-child(4n)]:border-r-0">
                 <Link href={`/categories/${s.slug}`} className="group flex items-center gap-5 p-5 md:p-6">
-                  <span className="relative block size-16 shrink-0 overflow-hidden bg-obsidian">
+                  <span className="relative block size-16 shrink-0 overflow-hidden bg-ivory">
                     <Image src={s.image} alt="" fill sizes="64px" className="object-cover opacity-80 transition-transform duration-1000 group-hover:scale-110" />
                   </span>
                   <span className="min-w-0">
-                    <span className="meta block text-ivory/40">{pad(categories.indexOf(s) + 1)}</span>
-                    <span className="mt-1 block font-display text-xl font-light leading-tight transition-colors group-hover:text-champagne">{s.name}</span>
+                    <span className="meta block text-obsidian/40">{pad(categories.indexOf(s) + 1)}</span>
+                    <span className="mt-1 block font-display text-xl font-light leading-tight transition-colors group-hover:text-teal">{s.name}</span>
                   </span>
                 </Link>
               </StaggerItem>

@@ -78,20 +78,20 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <section className="section-y relative overflow-hidden bg-midnight text-ivory">
+      <section className="section-y relative overflow-hidden bg-ivory text-obsidian">
         <div aria-hidden className="aurora opacity-50" />
         <div className="container-luxe relative">
           <SectionHeading light index="02" eyebrow="Seasonal pricing" title={'Special prices,\nthoughtfully timed.'} italic={['thoughtfully', 'timed']} aside={<ButtonLink href="/shop?seasonal=1" variant="gold">View the seasonal edit</ButtonLink>} />
-          <div className="mt-16 grid gap-px bg-ivory/10 md:grid-cols-3">
+          <div className="mt-16 grid gap-px bg-obsidian/10 md:grid-cols-3">
             {[
               ['Three to four products', 'Each season a small edit of products is selected for special pricing. Never a clearance aisle.'],
               ['Both prices shown', 'The special price appears alongside the regular price, so the saving is always visible.'],
               ['A limited window', 'Seasonal pricing runs for a defined period, set and published by our team.'],
             ].map(([t, d], i) => (
-              <Reveal key={t} delay={i * 0.1} className="bg-midnight p-8 md:p-10">
-                <p className="meta text-champagne">{String(i + 1).padStart(2, '0')}</p>
+              <Reveal key={t} delay={i * 0.1} className="bg-ivory p-8 md:p-10">
+                <p className="meta text-teal">{String(i + 1).padStart(2, '0')}</p>
                 <h3 className="mt-8 font-display text-3xl font-light">{t}</h3>
-                <p className="mt-4 text-sm leading-relaxed text-ivory/60">{d}</p>
+                <p className="mt-4 text-sm leading-relaxed text-obsidian/60">{d}</p>
               </Reveal>
             ))}
           </div>

@@ -10,9 +10,9 @@ import { Err } from './ui'
 export function DarkField({ label, hint, error, children }: { label: string; hint?: ReactNode; error?: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="meta text-[0.62rem] text-ivory/50">{label}</span>
+      <span className="meta text-[0.62rem] text-obsidian/50">{label}</span>
       {children}
-      {hint && !error && <span className="mt-1.5 block text-xs text-ivory/40">{hint}</span>}
+      {hint && !error && <span className="mt-1.5 block text-xs text-obsidian/40">{hint}</span>}
       <Err msg={error} />
     </label>
   )
@@ -40,13 +40,13 @@ export function LoginForm({ to = '/supplier', emailLabel = 'Work email', cta = '
         <Button type="submit" variant="light" disabled={busy} className="sm:min-w-56">
           {busy ? 'Signing in' : cta}
         </Button>
-        <span className="meta text-[0.62rem] text-ivory/40">Password reset arrives with the auth provider</span>
+        <span className="meta text-[0.62rem] text-obsidian/40">Password reset arrives with the auth provider</span>
       </div>
-      <div className="sel-line mt-4 text-ivory" aria-hidden />
+      <div className="sel-line mt-4 text-obsidian" aria-hidden />
       {footer ?? (
-        <p className="text-sm text-ivory/60">
+        <p className="text-sm text-obsidian/60">
           Not yet a partner?{' '}
-          <Link href="/supplier/apply" className="link-line link-line--static text-champagne">
+          <Link href="/supplier/apply" className="link-line link-line--static text-teal">
             Apply to supply
           </Link>
         </p>

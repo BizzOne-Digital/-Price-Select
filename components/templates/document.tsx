@@ -23,7 +23,7 @@ export function DocumentFrame({ children, toolbar }: { children: ReactNode; tool
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex h-11 items-center gap-2 bg-obsidian px-5 text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-ivory hover:bg-midnight"
+            className="inline-flex h-11 items-center gap-2 bg-teal px-5 text-[0.625rem] font-semibold uppercase tracking-[0.18em] text-white hover:bg-teal/90"
           >
             <Printer className="size-4" strokeWidth={1.5} /> Print / Save as PDF
           </button>

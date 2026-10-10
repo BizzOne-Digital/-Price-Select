@@ -330,7 +330,7 @@ function FilterDrawer({ open, onClose, count, onClear, active, children }: { ope
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[110] lg:hidden">
-          <motion.button aria-label="Close filters" className="absolute inset-0 bg-obsidian/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
+          <motion.button aria-label="Close filters" className="absolute inset-0 bg-ivory/95" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} />
           <motion.div
             ref={panel}
             tabIndex={-1}
@@ -360,7 +360,7 @@ function FilterDrawer({ open, onClose, count, onClear, active, children }: { ope
               {children}
             </div>
             <div className="sticky bottom-0 border-t border-obsidian/10 bg-ivory p-4">
-              <button type="button" onClick={onClose} className="flex h-12 w-full items-center justify-between bg-obsidian px-6 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ivory">
+              <button type="button" onClick={onClose} className="flex h-12 w-full items-center justify-between bg-ivory px-6 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-obsidian">
                 Show {count} result{count === 1 ? '' : 's'}
                 <span className="h-px w-8 bg-champagne" aria-hidden />
               </button>

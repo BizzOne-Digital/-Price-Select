@@ -26,10 +26,10 @@ export function CategoryBoard() {
         const live = inCat.filter((p) => p.status === 'published').length
         const level = levels[c.slug]
         return (
-          <li key={c.slug} className="flex flex-col bg-[#f6f3ed] sm:flex-row">
+          <li key={c.slug} className="flex flex-col bg-ivory sm:flex-row">
             <div className="relative aspect-[16/9] shrink-0 overflow-hidden sm:aspect-auto sm:w-40">
               <Image src={c.image} alt={c.imageAlt} fill sizes="(min-width: 640px) 160px, 100vw" className="object-cover" />
-              <span className="absolute left-3 top-3 font-display text-lg text-ivory">{String(i + 1).padStart(2, '0')}</span>
+              <span className="absolute left-3 top-3 font-display text-lg text-obsidian">{String(i + 1).padStart(2, '0')}</span>
             </div>
             <div className="flex-1 p-5 md:p-6">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -49,7 +49,7 @@ export function CategoryBoard() {
                         setLevels((s) => ({ ...s, [c.slug]: l }))
                         toast({ title: `${c.short}: ${l} review (demo)`, body: l === 'enhanced' ? 'New listings will require document sign-off before publishing.' : 'Listings follow the standard review checklist.' })
                       }}
-                      className={cn('min-h-10 px-4 text-[0.62rem] font-semibold uppercase tracking-[0.14em] transition-colors', level === l ? (l === 'enhanced' ? 'bg-gold/15 text-gold-deep' : 'bg-obsidian text-ivory') : 'text-slate hover:text-obsidian')}
+                      className={cn('min-h-10 px-4 text-[0.62rem] font-semibold uppercase tracking-[0.14em] transition-colors', level === l ? (l === 'enhanced' ? 'bg-gold/15 text-gold-deep' : 'bg-teal text-white') : 'text-slate hover:text-obsidian')}
                     >
                       {l}
                     </button>

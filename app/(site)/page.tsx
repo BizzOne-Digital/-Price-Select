@@ -147,19 +147,19 @@ export default function Home() {
                 sizes="(min-width: 1024px) 50vw, 100vw"
                 className="aspect-[3/4] md:aspect-[4/5]"
               >
-                <div className="absolute inset-0 bg-gradient-to-t from-midnight/80 via-transparent to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-6 text-ivory md:p-10">
-                  <p className="eyebrow text-champagne">The seasonal edit</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-ivory/80 via-transparent to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 text-obsidian md:p-10">
+                  <p className="eyebrow text-teal">The seasonal edit</p>
                   <ul className="mt-5">
                     {seasonalProducts.map((p) => (
-                      <li key={p.slug} className="border-t border-ivory/15">
+                      <li key={p.slug} className="border-t border-obsidian/15">
                         <Link href={`/products/${p.slug}`} className="group flex items-baseline justify-between gap-4 py-3.5" data-cursor="View">
                           <span className="min-w-0">
-                            <span className="block truncate text-sm font-medium group-hover:text-champagne">{p.name}</span>
-                            <span className="meta text-ivory/45">{categoryName(p.category)}</span>
+                            <span className="block truncate text-sm font-medium group-hover:text-teal">{p.name}</span>
+                            <span className="meta text-obsidian/45">{categoryName(p.category)}</span>
                           </span>
                           <span className="shrink-0 text-right text-sm tabular-nums">
-                            {money(p.seasonalPrice!)} <s className="ml-2 text-xs text-ivory/40">{money(p.price)}</s>
+                            {money(p.seasonalPrice!)} <s className="ml-2 text-xs text-obsidian/40">{money(p.price)}</s>
                           </span>
                         </Link>
                       </li>
@@ -196,7 +196,7 @@ export default function Home() {
       </section>
 
       {/* 08 — Trust & compliance */}
-      <section className="section-y relative overflow-hidden bg-midnight text-ivory" aria-labelledby="trust-title">
+      <section className="section-y relative overflow-hidden bg-ivory text-obsidian" aria-labelledby="trust-title">
         <div aria-hidden className="aurora opacity-50" />
         <div className="container-luxe relative">
           <SectionHeading
@@ -211,18 +211,18 @@ export default function Home() {
               </p>
             }
           />
-          <Stagger as="ul" className="mt-20 grid gap-px bg-ivory/10 md:grid-cols-2 lg:grid-cols-4">
+          <Stagger as="ul" className="mt-20 grid gap-px bg-obsidian/10 md:grid-cols-2 lg:grid-cols-4">
             {[
               ['Authentic and new', 'Suppliers confirm every product is authentic and new before it can be listed.'],
               ['Documentation on file', 'Safety certificates, manuals and warranties are collected and retained where applicable.'],
               ['Enhanced review', "Children's products, construction materials and regulated goods receive additional review."],
               ['Clear pricing', 'Prices exclude applicable taxes and shipping. Both are shown separately before you pay.'],
             ].map(([t, d], i) => (
-              <StaggerItem as="li" key={t} className="group relative bg-midnight p-8 transition-colors duration-700 hover:bg-[#0b1828] md:p-10">
-                <span className="meta text-champagne">{String(i + 1).padStart(2, '0')}</span>
-                <ShieldCheck className="mt-10 size-6 text-champagne/70 transition-transform duration-700 group-hover:-translate-y-1" strokeWidth={1} aria-hidden />
+              <StaggerItem as="li" key={t} className="group relative bg-ivory p-8 transition-colors duration-700 hover:bg-ivory md:p-10">
+                <span className="meta text-teal">{String(i + 1).padStart(2, '0')}</span>
+                <ShieldCheck className="mt-10 size-6 text-teal/70 transition-transform duration-700 group-hover:-translate-y-1" strokeWidth={1} aria-hidden />
                 <h3 className="mt-6 font-display text-3xl font-light">{t}</h3>
-                <p className="mt-4 text-sm leading-relaxed text-ivory/60">{d}</p>
+                <p className="mt-4 text-sm leading-relaxed text-obsidian/60">{d}</p>
               </StaggerItem>
             ))}
           </Stagger>
@@ -232,10 +232,10 @@ export default function Home() {
             <dl className="grid gap-10 pt-10 sm:grid-cols-2 lg:grid-cols-4">
               {SERVICE_TARGETS.map((t) => (
                 <Reveal key={t.label}>
-                  <dt className="meta text-ivory/45">{t.label}</dt>
+                  <dt className="meta text-obsidian/45">{t.label}</dt>
                   <dd className="mt-4">
                     <span className="font-display text-6xl font-light">{t.value}</span>
-                    <span className="ml-2 text-sm text-ivory/55">{t.unit}</span>
+                    <span className="ml-2 text-sm text-obsidian/55">{t.unit}</span>
                   </dd>
                 </Reveal>
               ))}

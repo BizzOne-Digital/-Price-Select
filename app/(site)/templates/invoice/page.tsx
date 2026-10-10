@@ -15,7 +15,7 @@ export default function InvoiceTemplate() {
     <>
       <div data-print-hide>
         <PageBand eyebrow="Templates · Documents" title="Invoice." italic={['Invoice.']}>
-          <p className="mt-8 max-w-xl text-sm leading-relaxed text-ivory/60">Customer invoice shown with a sample order. Use Print / Save as PDF to see how it prints.</p>
+          <p className="mt-8 max-w-xl text-sm leading-relaxed text-obsidian/60">Customer invoice shown with a sample order. Use Print / Save as PDF to see how it prints.</p>
         </PageBand>
       </div>
       <DocumentFrame>

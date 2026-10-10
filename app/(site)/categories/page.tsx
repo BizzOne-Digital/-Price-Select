@@ -30,7 +30,7 @@ export default function CategoriesPage() {
   return (
     <>
       <PageBand eyebrow="Departments" title={'Eight departments.\nOne selection.'} italic={['selection.']} crumbs={[{ href: '/categories', label: 'Categories' }]}>
-        <Reveal delay={0.4} className="mt-8 max-w-xl text-base leading-relaxed text-ivory/70">
+        <Reveal delay={0.4} className="mt-8 max-w-xl text-base leading-relaxed text-obsidian/70">
           From the workshop to the nursery, each department is supplied by approved partners and reviewed to the standard its products require.
         </Reveal>
       </PageBand>
@@ -53,10 +53,10 @@ export default function CategoriesPage() {
                       className={cn('sel-frame', l.img)}
                       imgClassName="saturate-[0.85] transition-transform duration-[1.8s] ease-[var(--ease-luxe)] group-hover:scale-[1.05]"
                     >
-                      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-midnight/55 via-transparent to-transparent opacity-60 transition-opacity duration-700 group-hover:opacity-100" />
-                      <span className="absolute left-5 top-5 meta text-ivory/85 md:left-7 md:top-7">{pad(i + 1)}</span>
+                      <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ivory/55 via-transparent to-transparent opacity-60 transition-opacity duration-700 group-hover:opacity-100" />
+                      <span className="absolute left-5 top-5 meta text-obsidian/85 md:left-7 md:top-7">{pad(i + 1)}</span>
                       {c.reviewLevel === 'enhanced' && (
-                        <span className="absolute right-5 top-5 flex items-center gap-2 bg-midnight/70 px-2.5 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-champagne md:right-7 md:top-7">
+                        <span className="absolute right-5 top-5 flex items-center gap-2 bg-ivory/95 px-2.5 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-teal md:right-7 md:top-7">
                           <ShieldCheck className="size-3" strokeWidth={1.4} aria-hidden />
                           Enhanced review
                         </span>

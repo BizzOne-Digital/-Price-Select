@@ -48,10 +48,10 @@ export function EmailPreview({ emails, siteUrl }: { emails: EmailTemplate[]; sit
           </div>
           <div className="flex items-center gap-2">
             <div role="group" aria-label="Preview width" className="flex border border-obsidian/15">
-              <button type="button" onClick={() => setMobile(false)} aria-pressed={!mobile} aria-label="Desktop preview" className={cn('grid size-10 place-items-center', !mobile ? 'bg-obsidian text-ivory' : 'text-slate')}>
+              <button type="button" onClick={() => setMobile(false)} aria-pressed={!mobile} aria-label="Desktop preview" className={cn('grid size-10 place-items-center', !mobile ? 'bg-teal text-white' : 'text-slate')}>
                 <Monitor className="size-4" strokeWidth={1.5} />
               </button>
-              <button type="button" onClick={() => setMobile(true)} aria-pressed={mobile} aria-label="Phone preview" className={cn('grid size-10 place-items-center', mobile ? 'bg-obsidian text-ivory' : 'text-slate')}>
+              <button type="button" onClick={() => setMobile(true)} aria-pressed={mobile} aria-label="Phone preview" className={cn('grid size-10 place-items-center', mobile ? 'bg-teal text-white' : 'text-slate')}>
                 <Smartphone className="size-4" strokeWidth={1.5} />
               </button>
             </div>

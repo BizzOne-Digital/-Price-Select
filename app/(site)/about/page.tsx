@@ -74,16 +74,16 @@ export default function AboutPage() {
           <ImageReveal src={IMAGES.logistics} alt="An aerial view of a container port arranged in precise rows" direction="left" parallax={6} sizes="(min-width:768px) 66vw, 100vw" className="col-span-12 aspect-[16/9] md:col-span-8" />
           <div className="col-span-8 col-start-5 -mt-20 md:col-span-4 md:col-start-8 md:-mt-48">
             <Parallax speed={50}>
-              <ImageReveal src={IMAGES.parcels} alt="Parcels stacked and labelled, ready for dispatch" direction="up" delay={0.2} sizes="(min-width:768px) 33vw, 66vw" className="sel-frame aspect-[4/5] border-[10px] border-ivory" />
+              <ImageReveal src={IMAGES.parcels} alt="Parcels stacked and labelled, ready for dispatch" direction="up" delay={0.2} sizes="(min-width:768px) 33vw, 66vw" className="sel-frame aspect-[4/5] border-[10px] border-obsidian" />
             </Parallax>
           </div>
         </div>
       </section>
 
-      <section className="bg-obsidian py-16 text-ivory md:py-24">
+      <section className="bg-ivory py-16 text-obsidian md:py-24">
         <ScrollMarquee from={0} to={-35}>
           <p aria-hidden className="font-display text-[clamp(4rem,12vw,13rem)] font-light leading-none tracking-[-0.04em]">
-            Selection <em className="text-champagne">·</em> Value <em className="text-champagne">·</em> Trust <em className="text-champagne">·</em> Precision <em className="text-champagne">·</em> Selection
+            Selection <em className="text-teal">·</em> Value <em className="text-teal">·</em> Trust <em className="text-teal">·</em> Precision <em className="text-teal">·</em> Selection
           </p>
         </ScrollMarquee>
       </section>
@@ -136,7 +136,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="section-y relative overflow-hidden bg-midnight text-ivory">
+      <section className="section-y relative overflow-hidden bg-ivory text-obsidian">
         <div aria-hidden className="aurora opacity-60" />
         <div className="container-luxe relative text-center">
           <Reveal>

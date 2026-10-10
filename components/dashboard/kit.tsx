@@ -279,7 +279,7 @@ export function ActionButton({ children, tone = 'default', className, ...rest }:
     <button
       className={cn(
         'inline-flex h-10 items-center justify-center gap-2 border px-4 text-[0.65rem] font-semibold uppercase tracking-[0.16em] transition-colors disabled:opacity-40',
-        tone === 'primary' && 'border-obsidian bg-obsidian text-ivory hover:bg-midnight hover:text-champagne',
+        tone === 'primary' && 'border-teal bg-teal text-white hover:bg-teal/90 hover:text-white',
         tone === 'default' && 'border-obsidian/20 hover:border-obsidian',
         tone === 'danger' && 'border-danger/40 text-danger hover:bg-danger/5',
         tone === 'ghost' && 'border-transparent text-slate hover:text-obsidian',

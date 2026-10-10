@@ -39,7 +39,7 @@ export function ProductGallery({ images, name }: { images: Product['images']; na
                 onClick={() => setI(n)}
                 aria-label={`Show image ${n + 1} of ${images.length}`}
                 aria-current={n === i ? 'true' : undefined}
-                className={cn('relative block aspect-[4/5] w-full overflow-hidden bg-obsidian transition-opacity duration-500', n === i ? 'opacity-100' : 'opacity-45 hover:opacity-80')}
+                className={cn('relative block aspect-[4/5] w-full overflow-hidden bg-ivory transition-opacity duration-500', n === i ? 'opacity-100' : 'opacity-45 hover:opacity-80')}
               >
                 <Image src={m.src} alt="" fill sizes="80px" className="object-cover" />
                 <span aria-hidden className={cn('absolute inset-x-0 bottom-0 h-px origin-left bg-champagne transition-transform duration-700 ease-[var(--ease-luxe)]', n === i ? 'scale-x-100' : 'scale-x-0')} />
@@ -50,7 +50,7 @@ export function ProductGallery({ images, name }: { images: Product['images']; na
       )}
 
       <div className="sel-frame relative aspect-[4/5] flex-1 lg:aspect-auto lg:min-h-[78svh]">
-        <div className="absolute inset-0 overflow-hidden bg-obsidian">
+        <div className="absolute inset-0 overflow-hidden bg-ivory">
           <AnimatePresence initial={false}>
             <motion.div
               key={img.src}
@@ -65,15 +65,15 @@ export function ProductGallery({ images, name }: { images: Product['images']; na
           </AnimatePresence>
         </div>
         {images.length > 1 && (
-          <div className="absolute inset-x-0 bottom-0 z-[2] flex items-center justify-between p-4 text-ivory md:p-6">
-            <p className="meta tabular-nums text-ivory/80" aria-live="polite">
-              {pad(i + 1)} <span className="text-ivory/40">/ {pad(images.length)}</span>
+          <div className="absolute inset-x-0 bottom-0 z-[2] flex items-center justify-between p-4 text-obsidian md:p-6">
+            <p className="meta tabular-nums text-obsidian/80" aria-live="polite">
+              {pad(i + 1)} <span className="text-obsidian/40">/ {pad(images.length)}</span>
             </p>
             <div className="flex gap-2">
-              <button type="button" onClick={() => go(i - 1)} aria-label="Previous image" className="grid size-11 place-items-center border border-ivory/30 bg-midnight/30 transition-colors hover:border-champagne hover:text-champagne">
+              <button type="button" onClick={() => go(i - 1)} aria-label="Previous image" className="grid size-11 place-items-center border border-obsidian/30 bg-midnight/30 transition-colors hover:border-champagne hover:text-teal">
                 <ArrowLeft className="size-4" strokeWidth={1.3} />
               </button>
-              <button type="button" onClick={() => go(i + 1)} aria-label="Next image" className="grid size-11 place-items-center border border-ivory/30 bg-midnight/30 transition-colors hover:border-champagne hover:text-champagne">
+              <button type="button" onClick={() => go(i + 1)} aria-label="Next image" className="grid size-11 place-items-center border border-obsidian/30 bg-midnight/30 transition-colors hover:border-champagne hover:text-teal">
                 <ArrowRight className="size-4" strokeWidth={1.3} />
               </button>
             </div>
@@ -115,11 +115,11 @@ export function Accordion({ items, dark }: { items: { title: string; content: Re
   const [open, setOpen] = useState<number | null>(0)
   const id = useId()
   return (
-    <div className={cn('border-b', dark ? 'border-ivory/12' : 'border-obsidian/10')}>
+    <div className={cn('border-b', dark ? 'border-obsidian/12' : 'border-obsidian/10')}>
       {items.map((it, n) => {
         const isOpen = open === n
         return (
-          <div key={it.title} className={cn('border-t', dark ? 'border-ivory/12' : 'border-obsidian/10')}>
+          <div key={it.title} className={cn('border-t', dark ? 'border-obsidian/12' : 'border-obsidian/10')}>
             <h3>
               <button
                 type="button"
@@ -127,10 +127,10 @@ export function Accordion({ items, dark }: { items: { title: string; content: Re
                 aria-expanded={isOpen}
                 aria-controls={`${id}-p${n}`}
                 onClick={() => setOpen(isOpen ? null : n)}
-                className={cn('group flex min-h-14 w-full items-center justify-between gap-6 py-4 text-left', dark ? 'text-ivory' : 'text-obsidian')}
+                className={cn('group flex min-h-14 w-full items-center justify-between gap-6 py-4 text-left', dark ? 'text-obsidian' : 'text-obsidian')}
               >
                 <span className="eyebrow">{it.title}</span>
-                <Plus className={cn('size-4 shrink-0 transition-transform duration-500 ease-[var(--ease-luxe)]', isOpen ? 'rotate-45 text-champagne' : dark ? 'text-ivory/50' : 'text-slate')} strokeWidth={1.2} aria-hidden />
+                <Plus className={cn('size-4 shrink-0 transition-transform duration-500 ease-[var(--ease-luxe)]', isOpen ? 'rotate-45 text-teal' : dark ? 'text-obsidian/50' : 'text-slate')} strokeWidth={1.2} aria-hidden />
               </button>
             </h3>
             <AnimatePresence initial={false}>
@@ -145,7 +145,7 @@ export function Accordion({ items, dark }: { items: { title: string; content: Re
                   transition={{ duration: 0.55, ease: EASE }}
                   className="overflow-hidden"
                 >
-                  <div className={cn('pb-7 text-sm leading-relaxed', dark ? 'text-ivory/70' : 'text-slate')}>{it.content}</div>
+                  <div className={cn('pb-7 text-sm leading-relaxed', dark ? 'text-obsidian/70' : 'text-slate')}>{it.content}</div>
                 </motion.div>
               )}
             </AnimatePresence>

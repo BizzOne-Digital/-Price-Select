@@ -20,29 +20,29 @@ export default function EditorialTemplate() {
   return (
     <>
       {/* Full-bleed cover with a department index */}
-      <section className="relative isolate flex min-h-svh flex-col justify-end overflow-hidden bg-midnight text-ivory">
-        <Image src={IMAGES.heroWarehouse} alt="Rows of shelving in a large, orderly warehouse" fill priority sizes="100vw" className="-z-20 object-cover opacity-60" />
-        <div aria-hidden className="absolute inset-0 -z-10 scrim-b" />
-        <div aria-hidden className="absolute inset-0 -z-10 scrim-l opacity-70" />
+      <section className="relative isolate flex min-h-svh flex-col justify-end overflow-hidden bg-ivory text-obsidian">
+        <Image src={IMAGES.heroWarehouse} alt="Rows of shelving in a large, orderly warehouse" fill priority sizes="100vw" className="-z-20 object-cover opacity-[0.08]" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-ivory/60" />
+        <div aria-hidden className="absolute inset-0 -z-10 bg-ivory/60" />
         <div className="container-luxe grid gap-12 pb-24 pt-40 lg:grid-cols-12 lg:items-end">
           <div className="lg:col-span-8">
             <Reveal>
-              <Eyebrow light>Issue 01 · The better-price edit</Eyebrow>
+              <Eyebrow>Issue 01 · The better-price edit</Eyebrow>
             </Reveal>
             <SplitText as="h1" immediate delay={0.2} text={'Fairer prices.\nMore choice.'} italicWords={['Fairer']} className="mt-8 text-display-1" />
             <Reveal delay={0.6} className="mt-10 flex flex-wrap gap-4">
               <ButtonLink href="/shop">Shop the edit</ButtonLink>
-              <ButtonLink href="/about" variant="outline-light">Our story</ButtonLink>
+              <ButtonLink href="/about" variant="outline-dark">Our story</ButtonLink>
             </Reveal>
           </div>
           <Reveal delay={0.5} as="div" className="lg:col-span-3 lg:col-start-10">
-            <p className="meta text-ivory/50">In this issue</p>
-            <ol className="mt-4 border-t border-ivory/15">
+            <p className="meta text-obsidian/50">In this issue</p>
+            <ol className="mt-4 border-t border-obsidian/15">
               {categories.slice(0, 6).map((c, i) => (
-                <li key={c.slug} className="border-b border-ivory/15">
-                  <Link href={`/categories/${c.slug}`} className="flex items-baseline justify-between py-3 text-sm text-ivory/80 hover:text-champagne">
+                <li key={c.slug} className="border-b border-obsidian/15">
+                  <Link href={`/categories/${c.slug}`} className="flex items-baseline justify-between py-3 text-sm text-obsidian/80 hover:text-teal">
                     {c.short}
-                    <span className="meta text-ivory/35">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="meta text-obsidian/35">{String(i + 1).padStart(2, '0')}</span>
                   </Link>
                 </li>
               ))}
@@ -92,7 +92,7 @@ export default function EditorialTemplate() {
       </section>
 
       {/* Product rail */}
-      <section className="section-y overflow-hidden bg-midnight text-ivory">
+      <section className="section-y overflow-hidden bg-ivory text-obsidian">
         <div className="container-luxe flex flex-wrap items-end justify-between gap-6">
           <div>
             <Eyebrow light>Selected this season</Eyebrow>
@@ -139,7 +139,7 @@ export default function EditorialTemplate() {
       </section>
 
       {/* Sourcing story */}
-      <section className="relative isolate overflow-hidden bg-obsidian py-32 text-ivory md:py-44">
+      <section className="relative isolate overflow-hidden bg-ivory py-32 text-obsidian md:py-44">
         <Image src={IMAGES.logistics} alt="An aerial view of a container port arranged in precise rows" fill sizes="100vw" className="-z-20 object-cover opacity-35" />
         <div aria-hidden className="absolute inset-0 -z-10 scrim-l" />
         <div className="container-luxe">

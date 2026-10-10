@@ -33,7 +33,7 @@ export function CartDrawer() {
         <div className="fixed inset-0 z-[110]">
           <motion.button
             aria-label="Close cart"
-            className="absolute inset-0 bg-obsidian/60 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-ivory/95 backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -143,7 +143,7 @@ export function CartDrawer() {
 
 export function Qty({ value, onChange, label, dark }: { value: number; onChange: (n: number) => void; label: string; dark?: boolean }) {
   return (
-    <div className={`inline-flex h-10 items-center border ${dark ? 'border-ivory/20' : 'border-obsidian/15'}`} role="group" aria-label={`Quantity for ${label}`}>
+    <div className={`inline-flex h-10 items-center border ${dark ? 'border-obsidian/20' : 'border-obsidian/15'}`} role="group" aria-label={`Quantity for ${label}`}>
       <button type="button" onClick={() => onChange(value - 1)} aria-label="Decrease quantity" className="grid size-10 place-items-center hover:text-gold-deep">
         <Minus className="size-3" />
       </button>

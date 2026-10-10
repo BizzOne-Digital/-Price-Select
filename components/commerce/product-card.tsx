@@ -29,7 +29,7 @@ export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5
       <div className="relative">
       <Link href={`/products/${p.slug}`} data-cursor="Select" className="block" aria-label={`${p.name}, ${money(price)}`}>
         <div className={cn('sel-frame relative', aspect)}>
-          <div className={cn('absolute inset-0 overflow-hidden', dark ? 'bg-[#0e1a2a]' : 'bg-pearl')}>
+          <div className={cn('absolute inset-0 overflow-hidden', dark ? 'bg-ivory' : 'bg-pearl')}>
             <Image
               src={p.images[0].src}
               alt={p.images[0].alt}
@@ -47,14 +47,14 @@ export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5
                 className="object-cover [clip-path:inset(100%_0_0_0)] transition-[clip-path,transform] duration-[1.1s] ease-[var(--ease-curtain)] group-hover:scale-[1.03] group-hover:[clip-path:inset(0_0_0_0)]"
               />
             )}
-            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-obsidian/50 via-transparent to-transparent opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ivory/50 via-transparent to-transparent opacity-0 transition-opacity duration-700 group-hover:opacity-100" />
           </div>
           {p.tag && (
             <span className="absolute left-4 top-4 z-[2] bg-coral px-2.5 py-1.5 text-[0.6rem] font-semibold uppercase tracking-[0.18em] text-obsidian">
               {p.tag}
             </span>
           )}
-          <span className="absolute right-4 top-4 z-[2] meta text-ivory/0 transition-colors duration-500 group-hover:text-ivory/80">
+          <span className="absolute right-4 top-4 z-[2] meta text-obsidian/0 transition-colors duration-500 group-hover:text-obsidian/80">
             {String(index + 1).padStart(2, '0')}
           </span>
         </div>
@@ -75,22 +75,22 @@ export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5
       </button>
       </div>
 
-      <div className={cn('relative mt-5 pt-4', dark ? 'text-ivory' : 'text-obsidian')}>
-        <span aria-hidden className={cn('absolute inset-x-0 top-0 h-px origin-left transition-transform duration-700 ease-[var(--ease-luxe)]', dark ? 'bg-ivory/15' : 'bg-obsidian/12')} />
+      <div className={cn('relative mt-5 pt-4', dark ? 'text-obsidian' : 'text-obsidian')}>
+        <span aria-hidden className={cn('absolute inset-x-0 top-0 h-px origin-left transition-transform duration-700 ease-[var(--ease-luxe)]', dark ? 'bg-obsidian/15' : 'bg-obsidian/12')} />
         <span aria-hidden className="absolute inset-x-0 top-0 h-px origin-left scale-x-0 bg-champagne transition-transform duration-700 ease-[var(--ease-luxe)] group-hover:scale-x-100" />
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 transition-transform duration-700 ease-[var(--ease-luxe)] group-hover:translate-x-1">
-            <p className={cn('meta', dark ? 'text-ivory/45' : 'text-slate')}>{categoryName(p.category)}</p>
+            <p className={cn('meta', dark ? 'text-obsidian/45' : 'text-slate')}>{categoryName(p.category)}</p>
             <h3 className="mt-2 text-[0.95rem] font-medium leading-snug">
               <Link href={`/products/${p.slug}`}>{p.name}</Link>
             </h3>
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-[0.95rem] tabular-nums transition-[font-size,color] duration-500 group-hover:text-champagne">{money(price)}</p>
-            {p.seasonalPrice && <p className={cn('text-xs tabular-nums line-through', dark ? 'text-ivory/35' : 'text-slate/70')}>{money(p.price)}</p>}
+            <p className="text-[0.95rem] tabular-nums transition-[font-size,color] duration-500 group-hover:text-teal">{money(price)}</p>
+            {p.seasonalPrice && <p className={cn('text-xs tabular-nums line-through', dark ? 'text-obsidian/35' : 'text-slate/70')}>{money(p.price)}</p>}
           </div>
         </div>
-        <p className={cn('mt-3 flex items-center gap-2 text-xs', dark ? 'text-ivory/45' : 'text-slate')}>
+        <p className={cn('mt-3 flex items-center gap-2 text-xs', dark ? 'text-obsidian/45' : 'text-slate')}>
           <span className={cn('size-1.5 rounded-full', p.stock === 'in_stock' ? 'bg-success' : p.stock === 'low_stock' ? 'bg-warning' : 'bg-mist')} aria-hidden />
           {STOCK_LABEL[p.stock]} · {p.deliveryEstimate.split(',')[0]}
         </p>

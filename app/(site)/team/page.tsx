@@ -61,7 +61,7 @@ export default function TeamPage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-midnight text-ivory">
+      <section className="relative overflow-hidden bg-ivory text-obsidian">
         <div className="grid lg:grid-cols-12">
           <div className="section-y px-5 md:px-16 lg:col-span-6 lg:px-20">
             <Reveal>
@@ -70,11 +70,11 @@ export default function TeamPage() {
             <SplitText text={'Four disciplines,\none standard.'} italicWords={['one', 'standard']} className="mt-10 text-display-3" />
             <ol className="mt-14">
               {FUNCTIONS.map(([t, d], i) => (
-                <Reveal as="li" key={t} delay={i * 0.08} className="grid grid-cols-[3rem_1fr] border-t border-ivory/12 py-7">
-                  <span className="meta text-champagne">{String(i + 1).padStart(2, '0')}</span>
+                <Reveal as="li" key={t} delay={i * 0.08} className="grid grid-cols-[3rem_1fr] border-t border-obsidian/12 py-7">
+                  <span className="meta text-teal">{String(i + 1).padStart(2, '0')}</span>
                   <span>
                     <span className="block font-display text-2xl font-light">{t}</span>
-                    <span className="mt-2 block text-sm leading-relaxed text-ivory/60">{d}</span>
+                    <span className="mt-2 block text-sm leading-relaxed text-obsidian/60">{d}</span>
                   </span>
                 </Reveal>
               ))}

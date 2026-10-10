@@ -14,7 +14,7 @@ export default function PackingSlipTemplate() {
     <>
       <div data-print-hide>
         <PageBand eyebrow="Templates · Documents" title={'Packing\nslip.'} italic={['slip.']}>
-          <p className="mt-8 max-w-xl text-sm leading-relaxed text-ivory/60">
+          <p className="mt-8 max-w-xl text-sm leading-relaxed text-obsidian/60">
             Placed in every parcel. Suppliers print it with Price-Select branding only, so shipments arrive with no supplier names or prices (blind drop shipping).
           </p>
         </PageBand>

@@ -139,7 +139,7 @@ export function ImageReveal({
     <motion.div
       ref={ref}
       data-cursor={cursor || undefined}
-      className={cn('relative overflow-hidden bg-midnight', className)}
+      className={cn('relative overflow-hidden bg-ivory', className)}
       initial={{ clipPath: from }}
       whileInView={{ clipPath: to }}
       viewport={{ once: true, margin: '0px 0px -8% 0px' }}

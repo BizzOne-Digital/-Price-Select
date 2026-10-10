@@ -39,8 +39,8 @@ export function CategoryShowcase() {
           <Image key={x.slug} src={x.image} alt="" width={16} height={16} />
         ))}
       </div>
-      <div aria-hidden className="absolute inset-0 -z-10 scrim-l" />
-      <div aria-hidden className="absolute inset-0 -z-10 scrim-b" />
+      <div aria-hidden className="absolute inset-0 -z-10" style={{ background: 'linear-gradient(90deg, rgb(17 24 39 / 0.88), rgb(17 24 39 / 0.35) 55%, rgb(17 24 39 / 0.1))' }} />
+      <div aria-hidden className="absolute inset-0 -z-10" style={{ background: 'linear-gradient(0deg, rgb(17 24 39 / 0.92), rgb(17 24 39 / 0.25) 45%, transparent 75%)' }} />
 
       <div className="container-luxe relative grid min-h-[100svh] grid-cols-[minmax(0,1fr)] grid-rows-[1fr_auto] gap-10 py-24 lg:grid-cols-12 lg:grid-rows-1 lg:items-end lg:py-28">
         {/* Stable copy block */}
@@ -77,7 +77,7 @@ export function CategoryShowcase() {
             </motion.div>
           </AnimatePresence>
           <div className="mt-10">
-            <ButtonLink href={`/categories/${c.slug}`} variant="gold" data-cursor="Explore">
+            <ButtonLink href={`/categories/${c.slug}`} variant="gold" className="text-ivory" data-cursor="Explore">
               Enter {c.short.toLowerCase()}
             </ButtonLink>
           </div>

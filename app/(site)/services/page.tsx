@@ -37,7 +37,7 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-midnight text-ivory">
+      <section className="relative overflow-hidden bg-ivory text-obsidian">
         <div className="grid lg:grid-cols-2">
           <ImageReveal src={IMAGES.handoff} alt="A parcel being handed over at a doorway" direction="right" sizes="(min-width:1024px) 50vw, 100vw" className="aspect-[4/3] lg:aspect-auto lg:min-h-[90svh]" />
           <div className="section-y relative px-5 md:px-16 lg:px-20">
@@ -49,14 +49,14 @@ export default function ServicesPage() {
               <SplitText text={'Accountability,\nagreed in advance.'} italicWords={['agreed']} className="mt-8 text-display-3" />
               <Stagger as="ul" className="mt-14">
                 {SERVICE_TARGETS.map((t) => (
-                  <StaggerItem as="li" key={t.label} className="grid grid-cols-[1fr_auto] items-end gap-6 border-t border-ivory/12 py-6">
+                  <StaggerItem as="li" key={t.label} className="grid grid-cols-[1fr_auto] items-end gap-6 border-t border-obsidian/12 py-6">
                     <div>
                       <p className="text-base">{t.label}</p>
-                      <p className="mt-1 text-sm text-ivory/55">{t.detail}</p>
+                      <p className="mt-1 text-sm text-obsidian/55">{t.detail}</p>
                     </div>
                     <p className="text-right">
                       <span className="font-display text-5xl font-light">{t.value}</span>
-                      <span className="ml-2 meta text-ivory/50">{t.unit}</span>
+                      <span className="ml-2 meta text-obsidian/50">{t.unit}</span>
                     </p>
                   </StaggerItem>
                 ))}

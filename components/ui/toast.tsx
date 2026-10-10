@@ -30,14 +30,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.6, ease: EASE }}
-              className="pointer-events-auto flex items-start gap-4 border border-champagne/25 bg-obsidian/95 px-5 py-4 text-ivory shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur"
+              className="pointer-events-auto flex items-start gap-4 border border-champagne/25 bg-ivory/95 px-5 py-4 text-obsidian shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur"
             >
-              <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-champagne/50 text-champagne">
+              <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-champagne/50 text-teal">
                 <Check className="size-3" strokeWidth={1.5} />
               </span>
               <div>
                 <p className="text-sm font-medium">{t.title}</p>
-                {t.body && <p className="mt-1 text-xs leading-relaxed text-ivory/60">{t.body}</p>}
+                {t.body && <p className="mt-1 text-xs leading-relaxed text-obsidian/60">{t.body}</p>}
               </div>
             </motion.div>
           ))}

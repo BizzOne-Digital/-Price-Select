@@ -10,10 +10,10 @@ type Variant = 'light' | 'dark' | 'outline-light' | 'outline-dark' | 'gold'
 const VARIANTS: Record<Variant, { base: string; fill: string; hover: string }> = {
   // Primary buttons are deep teal on both dark and light surfaces.
   light: { base: 'bg-teal text-white border-teal', fill: 'bg-ivory', hover: 'group-hover:text-obsidian' },
-  dark: { base: 'bg-teal text-white border-teal', fill: 'bg-obsidian', hover: 'group-hover:text-white' },
-  'outline-light': { base: 'border-ivory/40 text-ivory', fill: 'bg-ivory', hover: 'group-hover:text-obsidian' },
-  'outline-dark': { base: 'border-obsidian/30 text-obsidian', fill: 'bg-obsidian', hover: 'group-hover:text-ivory' },
-  gold: { base: 'border-champagne/70 text-ivory', fill: 'bg-champagne', hover: 'group-hover:text-obsidian' },
+  dark: { base: 'bg-teal text-white border-teal', fill: 'bg-teal/90', hover: 'group-hover:text-white' },
+  'outline-light': { base: 'border-teal/40 text-teal', fill: 'bg-ivory', hover: 'group-hover:text-obsidian' },
+  'outline-dark': { base: 'border-teal/40 text-teal', fill: 'bg-ivory', hover: 'group-hover:text-obsidian' },
+  gold: { base: 'border-champagne/70 text-obsidian', fill: 'bg-champagne', hover: 'group-hover:text-obsidian' },
 }
 
 export function btnClass(variant: Variant = 'light', className?: string) {
@@ -62,7 +62,7 @@ export function Button({ children, variant = 'dark', className, icon = true, ...
 
 export function TextLink({ href, children, className, light }: { href: string; children: ReactNode; className?: string; light?: boolean }) {
   return (
-    <Link href={href} className={cn('link-line link-line--static eyebrow', light ? 'text-ivory' : 'text-teal', className)}>
+    <Link href={href} className={cn('link-line link-line--static eyebrow', light ? 'text-obsidian' : 'text-teal', className)}>
       {children}
       <ArrowRight className="size-3.5" strokeWidth={1.5} />
     </Link>
@@ -72,8 +72,8 @@ export function TextLink({ href, children, className, light }: { href: string; c
 /* ───────── Eyebrow with index: "03 — The current selection" ───────── */
 export function Eyebrow({ index, children, light, className }: { index?: string; children: ReactNode; light?: boolean; className?: string }) {
   return (
-    <p className={cn('eyebrow flex items-center gap-4', light ? 'text-ivory/60' : 'text-slate', className)}>
-      {index && <span className={light ? 'text-champagne' : 'text-gold-deep'}>{index}</span>}
+    <p className={cn('eyebrow flex items-center gap-4', light ? 'text-obsidian/60' : 'text-slate', className)}>
+      {index && <span className={light ? 'text-teal' : 'text-gold-deep'}>{index}</span>}
       <span className="sel-mark" aria-hidden />
       <span>{children}</span>
     </p>
@@ -107,10 +107,10 @@ export function SectionHeading({
             {eyebrow}
           </Eyebrow>
         </Reveal>
-        <SplitText as={as} text={title} italicWords={italic} className={cn('mt-8 text-display-2', light ? 'text-ivory' : 'text-obsidian')} />
+        <SplitText as={as} text={title} italicWords={italic} className={cn('mt-8 text-display-2', light ? 'text-obsidian' : 'text-obsidian')} />
       </div>
       {aside && (
-        <Reveal delay={0.2} className={cn('md:col-span-4 md:justify-self-end', light ? 'text-ivory/70' : 'text-slate')}>
+        <Reveal delay={0.2} className={cn('md:col-span-4 md:justify-self-end', light ? 'text-obsidian/70' : 'text-slate')}>
           {aside}
         </Reveal>
       )}
@@ -118,7 +118,7 @@ export function SectionHeading({
   )
 }
 
-/* ───────── Page hero: full-bleed image, scrim, split headline ───────── */
+/* ───────── Page hero: subtle image, ivory backdrop, split headline ───────── */
 export function PageHero({
   eyebrow,
   title,
@@ -142,18 +142,17 @@ export function PageHero({
 }) {
   const h = { md: 'min-h-[68svh]', lg: 'min-h-[86svh]', full: 'min-h-svh' }[size]
   return (
-    <section className={cn('relative isolate flex items-end overflow-hidden bg-midnight text-ivory', h)}>
-      <ImageReveal src={image} alt={imageAlt} priority direction="down" parallax={8} cursor={false} className="!absolute inset-0 -z-10" imgClassName="opacity-80" />
-      <div aria-hidden className="absolute inset-0 -z-10 scrim-b" />
-      <div aria-hidden className="absolute inset-0 -z-10 scrim-l opacity-70" />
+    <section className={cn('relative isolate flex items-end overflow-hidden bg-ivory text-obsidian', h)}>
+      <ImageReveal src={image} alt={imageAlt} priority direction="down" parallax={8} cursor={false} className="!absolute inset-0 -z-10 bg-ivory" imgClassName="opacity-[0.08]" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-ivory via-ivory/80 to-ivory/50" />
       <div className="container-luxe relative w-full pb-14 pt-40 md:pb-20">
-        {crumbs && <Breadcrumbs items={crumbs} light className="mb-10" />}
+        {crumbs && <Breadcrumbs items={crumbs} className="mb-10" />}
         <Reveal>
-          <Eyebrow light>{eyebrow}</Eyebrow>
+          <Eyebrow>{eyebrow}</Eyebrow>
         </Reveal>
         <SplitText as="h1" immediate delay={0.25} text={title} italicWords={italic} className="mt-8 max-w-[14ch] text-display-1" />
         {intro && (
-          <Reveal delay={0.7} className="mt-10 max-w-xl text-base leading-relaxed text-ivory/75 md:text-lg">
+          <Reveal delay={0.7} className="mt-10 max-w-xl text-base leading-relaxed text-obsidian/75 md:text-lg">
             {intro}
           </Reveal>
         )}
@@ -164,14 +163,14 @@ export function PageHero({
   )
 }
 
-/* ───────── Compact dark band for functional pages (shop, cart, account) ───────── */
+/* ───────── Compact light band for functional pages (shop, cart, account) ───────── */
 export function PageBand({ eyebrow, title, italic = [], crumbs, children }: { eyebrow: string; title: string; italic?: string[]; crumbs?: { href: string; label: string }[]; children?: ReactNode }) {
   return (
-    <section className="relative isolate overflow-hidden bg-midnight text-ivory">
-      <div aria-hidden className="aurora opacity-70" />
+    <section className="relative isolate overflow-hidden bg-ivory text-obsidian">
+      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#0f766e08,transparent_65%)]" />
       <div className="container-luxe relative pb-12 pt-36 md:pb-16 md:pt-44">
-        {crumbs && <Breadcrumbs items={crumbs} light className="mb-8" />}
-        <Eyebrow light>{eyebrow}</Eyebrow>
+        {crumbs && <Breadcrumbs items={crumbs} className="mb-8" />}
+        <Eyebrow>{eyebrow}</Eyebrow>
         <SplitText as="h1" immediate delay={0.15} text={title} italicWords={italic} className="mt-6 text-display-2" />
         {children}
       </div>
@@ -192,15 +191,15 @@ export function Breadcrumbs({ items, light, className }: { items: { href: string
           itemListElement: all.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.label, item: `${SITE.url}${c.href}` })),
         }}
       />
-      <ol className={cn('meta flex flex-wrap items-center gap-2', light ? 'text-ivory/50' : 'text-slate')}>
+      <ol className={cn('meta flex flex-wrap items-center gap-2', light ? 'text-obsidian/50' : 'text-slate')}>
         {all.map((c, i) => (
           <li key={c.href} className="flex items-center gap-2">
             {i < all.length - 1 ? (
-              <Link href={c.href} className={cn('transition-colors', light ? 'hover:text-champagne' : 'hover:text-obsidian')}>
+              <Link href={c.href} className={cn('transition-colors', light ? 'hover:text-teal' : 'hover:text-obsidian')}>
                 {c.label}
               </Link>
             ) : (
-              <span aria-current="page" className={light ? 'text-ivory/85' : 'text-obsidian'}>
+              <span aria-current="page" className={light ? 'text-obsidian/85' : 'text-obsidian'}>
                 {c.label}
               </span>
             )}
@@ -219,7 +218,7 @@ export function JsonLd({ data }: { data: object }) {
 /** Honest labelling for sample content. */
 export function DemoNote({ children, light, className }: { children: ReactNode; light?: boolean; className?: string }) {
   return (
-    <p className={cn('meta flex items-center gap-3', light ? 'text-ivory/45' : 'text-slate/80', className)}>
+    <p className={cn('meta flex items-center gap-3', light ? 'text-obsidian/45' : 'text-slate/80', className)}>
       <span className={cn('size-1.5 rounded-full', light ? 'bg-champagne/70' : 'bg-gold')} aria-hidden />
       {children}
     </p>

@@ -63,7 +63,7 @@ export function ReportCards() {
   return (
     <ul className="grid gap-px border border-obsidian/10 bg-obsidian/10 md:grid-cols-2 xl:grid-cols-3">
       {REPORTS.map((r, i) => (
-        <li key={r.key} className="group flex flex-col bg-[#f6f3ed] p-6 md:p-8">
+        <li key={r.key} className="group flex flex-col bg-ivory p-6 md:p-8">
           <p className="meta text-[0.6rem] text-gold-deep">{String(i + 1).padStart(2, '0')} — CSV</p>
           <h2 className="mt-6 font-display text-4xl font-light tracking-[-0.02em]">{r.title}</h2>
           <p className="mt-3 flex-1 text-sm leading-relaxed text-slate">{r.detail}</p>
@@ -73,9 +73,9 @@ export function ReportCards() {
           </button>
         </li>
       ))}
-      <li className="flex flex-col justify-end bg-obsidian p-6 text-ivory md:p-8">
-        <p className="eyebrow text-champagne/80">Scheduled reports</p>
-        <p className="mt-4 text-sm leading-relaxed text-ivory/60">Scheduled email delivery and date-range filters arrive with the reporting integration. Exports here use demonstration records.</p>
+      <li className="flex flex-col justify-end bg-ivory p-6 text-obsidian md:p-8">
+        <p className="eyebrow text-teal/80">Scheduled reports</p>
+        <p className="mt-4 text-sm leading-relaxed text-obsidian/60">Scheduled email delivery and date-range filters arrive with the reporting integration. Exports here use demonstration records.</p>
       </li>
     </ul>
   )

@@ -44,7 +44,7 @@ export function Drawer({ open, onClose, title, eyebrow, children, footer }: { op
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.6, ease: EASE }}
-            className="absolute inset-y-0 right-0 flex w-full max-w-[760px] flex-col bg-[#f6f3ed] text-obsidian shadow-[-30px_0_80px_-30px_rgba(7,17,31,0.5)] focus:outline-none"
+            className="absolute inset-y-0 right-0 flex w-full max-w-[760px] flex-col bg-teal text-white shadow-[-30px_0_80px_-30px_rgba(7,17,31,0.5)] focus:outline-none"
           >
             <header className="flex items-start justify-between gap-6 border-b border-obsidian/10 px-6 py-6 md:px-10">
               <div>
@@ -73,11 +73,11 @@ export function FilePick({ label, hint, files, onChange, accept, multiple, error
   const id = useId()
   return (
     <div>
-      <label htmlFor={id} className={cn('group flex min-h-14 cursor-pointer items-center gap-4 border border-dashed px-4 py-3 transition-colors', dark ? 'border-ivory/20 hover:border-champagne/70' : 'border-obsidian/20 hover:border-gold', error && 'border-danger/60')}>
-        <Paperclip className={cn('size-4 shrink-0', dark ? 'text-champagne' : 'text-gold-deep')} strokeWidth={1.4} aria-hidden />
+      <label htmlFor={id} className={cn('group flex min-h-14 cursor-pointer items-center gap-4 border border-dashed px-4 py-3 transition-colors', dark ? 'border-obsidian/20 hover:border-champagne/70' : 'border-obsidian/20 hover:border-gold', error && 'border-danger/60')}>
+        <Paperclip className={cn('size-4 shrink-0', dark ? 'text-teal' : 'text-gold-deep')} strokeWidth={1.4} aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="block text-sm">{label}</span>
-          <span className={cn('mt-0.5 block truncate text-xs', dark ? 'text-ivory/45' : 'text-slate')}>{files.length ? files.join(', ') : (hint ?? 'Select a file')}</span>
+          <span className={cn('mt-0.5 block truncate text-xs', dark ? 'text-obsidian/45' : 'text-slate')}>{files.length ? files.join(', ') : (hint ?? 'Select a file')}</span>
         </span>
         {files.length > 0 && <Check className="size-4 text-success" strokeWidth={1.6} aria-label="Attached" />}
         <input id={id} type="file" className="sr-only" accept={accept} multiple={multiple} onChange={(e) => onChange(e.target.files)} aria-invalid={!!error} />
@@ -97,12 +97,12 @@ export function Tick({ checked, onChange, children, error, dark }: { checked: bo
           aria-hidden
           className={cn(
             'mt-0.5 grid size-5 shrink-0 place-items-center border transition-colors peer-focus-visible:outline peer-focus-visible:outline-1 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold',
-            checked ? (dark ? 'border-champagne bg-champagne text-obsidian' : 'border-obsidian bg-obsidian text-champagne') : dark ? 'border-ivory/30' : 'border-obsidian/30',
+            checked ? (dark ? 'border-champagne bg-champagne text-obsidian' : 'border-obsidian bg-ivory text-teal') : dark ? 'border-obsidian/30' : 'border-obsidian/30',
           )}
         >
           {checked && <Check className="size-3" strokeWidth={2} />}
         </span>
-        <span className={dark ? 'text-ivory/80' : ''}>{children}</span>
+        <span className={dark ? 'text-obsidian/80' : ''}>{children}</span>
       </label>
       {error && <p className="ml-8 mt-1 text-xs text-danger">{error}</p>}
     </div>
@@ -119,7 +119,7 @@ export function LinkButton({ href, children, tone = 'default' }: { href: string;
       href={href}
       className={cn(
         'inline-flex h-10 items-center justify-center gap-2 border px-4 text-[0.65rem] font-semibold uppercase tracking-[0.16em] transition-colors',
-        tone === 'primary' ? 'border-obsidian bg-obsidian text-ivory hover:bg-midnight hover:text-champagne' : 'border-obsidian/20 hover:border-obsidian',
+        tone === 'primary' ? 'border-teal bg-teal text-white hover:bg-teal/90 hover:text-white' : 'border-obsidian/20 hover:border-obsidian',
       )}
     >
       {children}

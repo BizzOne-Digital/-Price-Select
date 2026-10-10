@@ -10,9 +10,9 @@ const TYPES = {
     heading: 'Member sign in.',
     intro: 'Sign in to use your Member or Member Plus savings on eligible purchases.',
     footer: (
-      <p className="text-sm text-ivory/60">
+      <p className="text-sm text-obsidian/60">
         Not a member yet?{' '}
-        <Link href="/about" className="link-line link-line--static text-champagne">
+        <Link href="/about" className="link-line link-line--static text-teal">
           See membership options
         </Link>
       </p>
@@ -23,9 +23,9 @@ const TYPES = {
     heading: 'Customer sign in.',
     intro: 'Sign in to view your orders, track shipments and manage returns.',
     footer: (
-      <p className="text-sm text-ivory/60">
+      <p className="text-sm text-obsidian/60">
         New to Price-Select?{' '}
-        <Link href="/shop" className="link-line link-line--static text-champagne">
+        <Link href="/shop" className="link-line link-line--static text-teal">
           Start shopping
         </Link>
       </p>
@@ -52,12 +52,12 @@ export default async function SignInPage({ params }: { params: Promise<{ type: s
   return (
     <>
       <PageBand eyebrow={`Sign In · ${t.title}`} title={t.heading} italic={['in.']} />
-      <section className="dark-ui bg-obsidian pb-28 pt-14 text-ivory md:pb-36">
+      <section className="bg-ivory pb-28 pt-14 text-obsidian md:pb-36">
         <div className="container-luxe">
           <div className="max-w-xl">
-          <p className="text-sm leading-relaxed text-ivory/60">{t.intro}</p>
+          <p className="text-sm leading-relaxed text-obsidian/60">{t.intro}</p>
           <LoginForm to="/account" emailLabel="Email" cta="Sign in" footer={t.footer} />
-          <p className="mt-10 flex items-center gap-3 meta text-[0.62rem] text-ivory/40">
+          <p className="mt-10 flex items-center gap-3 meta text-[0.62rem] text-obsidian/40">
             <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden />
             Demo sign-in — authentication provider not yet connected
           </p>

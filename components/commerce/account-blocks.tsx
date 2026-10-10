@@ -23,7 +23,7 @@ export function OrderRow({ order: o }: { order: Order }) {
             {lines.slice(0, 4).map((l) => {
               const p = getProduct(l.productSlug)
               return (
-                <span key={l.productSlug} className="relative h-14 w-11 overflow-hidden border-2 border-ivory bg-pearl">
+                <span key={l.productSlug} className="relative h-14 w-11 overflow-hidden border-2 border-obsidian bg-pearl">
                   {p && <Image src={p.images[0].src} alt="" fill sizes="44px" className="object-cover" />}
                 </span>
               )

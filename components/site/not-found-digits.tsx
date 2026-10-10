@@ -13,7 +13,7 @@ export function NotFoundDigits() {
       <motion.span initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}>
         <motion.span className="inline-block" {...drift(-40)}>4</motion.span>
       </motion.span>
-      <motion.span className="relative mx-[0.04em] inline-block italic text-champagne" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 1.2 }}>
+      <motion.span className="relative mx-[0.04em] inline-block italic text-teal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 1.2 }}>
         <motion.span className="inline-block" animate={{ rotate: [0, -6, 0], scale: [1, 0.94, 1] }} transition={{ duration: 6, repeat: Infinity, ease: [0.65, 0, 0.35, 1] }}>
           0
         </motion.span>

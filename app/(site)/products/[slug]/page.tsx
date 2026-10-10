@@ -79,10 +79,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         />
       )}
 
-      <section className="relative bg-midnight pb-20 pt-28 text-ivory md:pt-32 dark-ui">
+      <section className="relative bg-ivory pb-20 pt-28 text-obsidian md:pt-32">
         <div className="container-luxe">
           <Breadcrumbs
-            light
+
             className="mb-8"
             items={[
               { href: '/shop', label: 'Shop' },
@@ -94,7 +94,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {!live && (
             <div role="status" className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 border border-warning/40 bg-warning/10 px-5 py-4 text-sm">
               <span className="eyebrow text-warning">Under review</span>
-              <span className="text-ivory/80">Not yet available to order. This listing is awaiting compliance review before it can be published.</span>
+              <span className="text-obsidian/80">Not yet available to order. This listing is awaiting compliance review before it can be published.</span>
             </div>
           )}
 
@@ -106,18 +106,18 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <div className="lg:col-span-5 lg:row-span-2 lg:pl-6 xl:col-span-4 xl:col-start-9 xl:pl-0">
               <div className="lg:sticky lg:top-28">
                 <Reveal delay={0.1}>
-                  <p className="meta flex flex-wrap items-center gap-x-3 gap-y-1 text-ivory/50">
-                    <Link href={`/categories/${cat.slug}`} className="hover:text-champagne">
+                  <p className="meta flex flex-wrap items-center gap-x-3 gap-y-1 text-obsidian/50">
+                    <Link href={`/categories/${cat.slug}`} className="hover:text-teal">
                       {cat.name}
                     </Link>
                     <span className="sel-mark w-5" aria-hidden />
-                    <span className="text-champagne">{p.brand}</span>
+                    <span className="text-teal">{p.brand}</span>
                   </p>
                   <h1 className="mt-5 font-display text-[clamp(2.4rem,4vw,3.75rem)] font-light leading-[0.98] tracking-[-0.03em]">{p.name}</h1>
-                  <p className="mt-5 text-base leading-relaxed text-ivory/70">{p.summary}</p>
+                  <p className="mt-5 text-base leading-relaxed text-obsidian/70">{p.summary}</p>
                 </Reveal>
 
-                <Reveal delay={0.2} className="mt-8 border-t border-ivory/12 pt-6">
+                <Reveal delay={0.2} className="mt-8 border-t border-obsidian/12 pt-6">
                   <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
                     <p className="text-3xl font-light tabular-nums">
                       <span className="sr-only">{p.seasonalPrice ? 'Seasonal price ' : 'Price '}</span>
@@ -125,15 +125,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     </p>
                     {p.seasonalPrice && (
                       <>
-                        <s className="text-base tabular-nums text-ivory/40">
+                        <s className="text-base tabular-nums text-obsidian/40">
                           <span className="sr-only">Original price </span>
                           {money(p.price)}
                         </s>
-                        <span className="eyebrow text-champagne">Seasonal price</span>
+                        <span className="eyebrow text-teal">Seasonal price</span>
                       </>
                     )}
                   </div>
-                  <p className="mt-2 text-xs text-ivory/50">Price excludes applicable taxes and shipping.</p>
+                  <p className="mt-2 text-xs text-obsidian/50">Price excludes applicable taxes and shipping.</p>
 
                   <dl className="mt-6 grid gap-3 text-sm">
                     <div className="flex items-center gap-3">
@@ -141,20 +141,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                       <span className={cn('size-1.5 rounded-full', p.stock === 'in_stock' ? 'bg-success' : p.stock === 'low_stock' ? 'bg-warning' : 'bg-mist')} aria-hidden />
                       <dd>
                         {STOCK_LABEL[p.stock]}
-                        {p.stock === 'low_stock' && p.stockQty > 0 && <span className="text-ivory/50"> — {p.stockQty} available</span>}
+                        {p.stock === 'low_stock' && p.stockQty > 0 && <span className="text-obsidian/50"> — {p.stockQty} available</span>}
                       </dd>
                     </div>
                     <div className="flex items-center gap-3">
                       <dt className="sr-only">Handling time</dt>
-                      <Clock className="size-3.5 text-champagne/80" strokeWidth={1.3} aria-hidden />
-                      <dd className="text-ivory/80">
+                      <Clock className="size-3.5 text-teal/80" strokeWidth={1.3} aria-hidden />
+                      <dd className="text-obsidian/80">
                         Ships within {p.handlingDays} business day{p.handlingDays === 1 ? '' : 's'}
                       </dd>
                     </div>
                     <div className="flex items-center gap-3">
                       <dt className="sr-only">Delivery estimate</dt>
-                      <Truck className="size-3.5 text-champagne/80" strokeWidth={1.3} aria-hidden />
-                      <dd className="text-ivory/80">Estimated delivery {p.deliveryEstimate}</dd>
+                      <Truck className="size-3.5 text-teal/80" strokeWidth={1.3} aria-hidden />
+                      <dd className="text-obsidian/80">Estimated delivery {p.deliveryEstimate}</dd>
                     </div>
                   </dl>
                 </Reveal>
@@ -163,19 +163,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   <BuyBox product={p} />
                 </Reveal>
 
-                <Reveal delay={0.35} className="mt-8 grid gap-4 border-y border-ivory/12 py-6 text-sm text-ivory/75">
+                <Reveal delay={0.35} className="mt-8 grid gap-4 border-y border-obsidian/12 py-6 text-sm text-obsidian/75">
                   <p className="flex gap-3">
-                    <PackageCheck className="mt-0.5 size-4 shrink-0 text-champagne" strokeWidth={1.2} aria-hidden />
+                    <PackageCheck className="mt-0.5 size-4 shrink-0 text-teal" strokeWidth={1.2} aria-hidden />
                     <span>
                       Fulfilled by an approved Price-Select supplier
-                      <span className="block text-xs text-ivory/45">Shipped in neutral packaging with Price-Select documentation where possible.</span>
+                      <span className="block text-xs text-obsidian/45">Shipped in neutral packaging with Price-Select documentation where possible.</span>
                     </span>
                   </p>
                   <p className="flex gap-3">
-                    <RotateCcw className="mt-0.5 size-4 shrink-0 text-champagne" strokeWidth={1.2} aria-hidden />
+                    <RotateCcw className="mt-0.5 size-4 shrink-0 text-teal" strokeWidth={1.2} aria-hidden />
                     <span>
                       Returns accepted
-                      <span className="block text-xs text-ivory/45">Return window confirmed per category before launch.</span>
+                      <span className="block text-xs text-obsidian/45">Return window confirmed per category before launch.</span>
                     </span>
                   </p>
                 </Reveal>
@@ -186,7 +186,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <Reveal>
               <h2 className="sr-only">Product details</h2>
               <Accordion
-                dark
                 items={[
                   { title: 'Description', content: <p>{p.description}</p> },
                   {
@@ -196,11 +195,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         <caption className="sr-only">{p.name} specifications</caption>
                         <tbody>
                           {[...p.specs.map((s) => [s.label, s.value] as [string, string]), ...facts].map(([k, v]) => (
-                            <tr key={k} className="border-b border-ivory/8 last:border-0">
-                              <th scope="row" className="w-2/5 py-2.5 pr-4 align-top font-normal text-ivory/45">
+                            <tr key={k} className="border-b border-obsidian/8 last:border-0">
+                              <th scope="row" className="w-2/5 py-2.5 pr-4 align-top font-normal text-obsidian/45">
                                 {k}
                               </th>
-                              <td className="py-2.5 tabular-nums text-ivory/85">{v}</td>
+                              <td className="py-2.5 tabular-nums text-obsidian/85">{v}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -215,7 +214,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                           Prepared by the supplier within {p.handlingDays} business day{p.handlingDays === 1 ? '' : 's'}; estimated delivery {p.deliveryEstimate}. A tracking number is added to your order once it ships.
                         </p>
                         <p>When an order contains products from different suppliers, items may arrive in separate shipments, each with its own tracking.</p>
-                        <p className="text-xs text-ivory/45">Shipping cost is shown separately at checkout. Carriers are confirmed before launch.</p>
+                        <p className="text-xs text-obsidian/45">Shipping cost is shown separately at checkout. Carriers are confirmed before launch.</p>
                       </div>
                     ),
                   },
@@ -224,7 +223,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     content: (
                       <div className="space-y-3">
                         <p>Return, damage and replacement requests are opened from your account and routed to the fulfilling supplier, with Price-Select support overseeing every case.</p>
-                        <p className="text-xs text-ivory/45">Return window confirmed per category before launch.</p>
+                        <p className="text-xs text-obsidian/45">Return window confirmed per category before launch.</p>
                       </div>
                     ),
                   },
@@ -232,19 +231,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     title: 'Safety & compliance',
                     content: (
                       <div className="space-y-4">
-                        {cat.reviewLevel === 'enhanced' && <p className="border-l border-champagne/60 pl-3 text-ivory/80">{cat.reviewNote}</p>}
+                        {cat.reviewLevel === 'enhanced' && <p className="border-l border-champagne/60 pl-3 text-obsidian/80">{cat.reviewNote}</p>}
                         <ul className="space-y-2.5">
                           {p.compliance.map((d) => (
                             <li key={d.label} className="flex items-center justify-between gap-4">
-                              <span className="text-ivory/85">{d.label}</span>
-                              <span className="meta flex shrink-0 items-center gap-2 text-ivory/50">
+                              <span className="text-obsidian/85">{d.label}</span>
+                              <span className="meta flex shrink-0 items-center gap-2 text-obsidian/50">
                                 <span className={cn('size-1.5 rounded-full', DOC_STATUS[d.status][1])} aria-hidden />
                                 {DOC_STATUS[d.status][0]}
                               </span>
                             </li>
                           ))}
                         </ul>
-                        <p className="text-xs text-ivory/45">Price-Select supports documentation and review workflows. This is not legal advice.</p>
+                        <p className="text-xs text-obsidian/45">Price-Select supports documentation and review workflows. This is not legal advice.</p>
                       </div>
                     ),
                   },
@@ -255,12 +254,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
               {facts.map(([k, v]) => (
                 <div key={k}>
-                  <dt className="meta text-ivory/35">{k}</dt>
-                  <dd className="mt-1 text-xs tabular-nums text-ivory/70">{v}</dd>
+                  <dt className="meta text-obsidian/35">{k}</dt>
+                  <dd className="mt-1 text-xs tabular-nums text-obsidian/70">{v}</dd>
                 </div>
               ))}
             </dl>
-            <DemoNote light className="mt-8">
+            <DemoNote  className="mt-8">
               Demonstration product and sample pricing
             </DemoNote>
             </div>

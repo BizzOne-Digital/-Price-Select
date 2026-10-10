@@ -97,11 +97,11 @@ export function ApplyFlow() {
 
   return (
     <div className="w-full max-w-2xl">
-      <p className="eyebrow text-champagne/80">Supplier application</p>
+      <p className="eyebrow text-teal/80">Supplier application</p>
       <h1 className="mt-5 font-display text-[clamp(2.5rem,4.6vw,4rem)] font-light leading-[0.95] tracking-[-0.03em]">
-        Apply to <em className="text-champagne">supply</em>.
+        Apply to <em className="text-teal">supply</em>.
       </h1>
-      <p className="mt-5 max-w-lg text-sm leading-relaxed text-ivory/55">Six short steps. Every application is reviewed by the Price-Select team before any listing can publish.</p>
+      <p className="mt-5 max-w-lg text-sm leading-relaxed text-obsidian/55">Six short steps. Every application is reviewed by the Price-Select team before any listing can publish.</p>
 
       {/* Progress: numbered steps over the selection line */}
       <nav aria-label="Application progress" className="mt-12">
@@ -113,7 +113,7 @@ export function ApplyFlow() {
                 disabled={i > step}
                 onClick={() => setStep(i)}
                 aria-current={i === step ? 'step' : undefined}
-                className={cn('flex min-h-11 w-full flex-col items-start gap-1 text-left transition-colors disabled:cursor-default', i === step ? 'text-ivory' : i < step ? 'text-champagne/80 hover:text-champagne' : 'text-ivory/30')}
+                className={cn('flex min-h-11 w-full flex-col items-start gap-1 text-left transition-colors disabled:cursor-default', i === step ? 'text-obsidian' : i < step ? 'text-teal/80 hover:text-teal' : 'text-obsidian/30')}
               >
                 <span className="meta text-[0.6rem] tabular-nums">{i < step ? <Check className="size-3" strokeWidth={2} aria-label="Complete" /> : String(i + 1).padStart(2, '0')}</span>
                 <span className="text-[0.72rem] font-medium tracking-wide">{s}</span>
@@ -121,8 +121,8 @@ export function ApplyFlow() {
             </li>
           ))}
         </ol>
-        <p className="meta text-[0.65rem] text-ivory/60 sm:hidden">
-          Step {step + 1} of {STEPS.length} <span className="text-champagne">— {STEPS[step]}</span>
+        <p className="meta text-[0.65rem] text-obsidian/60 sm:hidden">
+          Step {step + 1} of {STEPS.length} <span className="text-teal">— {STEPS[step]}</span>
         </p>
         <div className="relative mt-4 h-px bg-ivory/12" aria-hidden>
           <motion.div className="sel-line--gold absolute inset-y-0 left-0 h-px" animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }} transition={{ duration: 0.9, ease: EASE }} />
@@ -140,7 +140,7 @@ export function ApplyFlow() {
         <AnimatePresence mode="wait">
           <motion.fieldset key={step} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.45, ease: EASE }} className="space-y-8">
             <legend className="mb-8 font-display text-3xl font-light tracking-[-0.02em]">
-              <span className="mr-3 align-middle meta text-[0.65rem] text-champagne">{String(step + 1).padStart(2, '0')}</span>
+              <span className="mr-3 align-middle meta text-[0.65rem] text-teal">{String(step + 1).padStart(2, '0')}</span>
               {['Business details', 'Primary contact', 'Tax information', 'Shipping & fulfillment', 'Documentation', 'Review & submit'][step]}
             </legend>
 
@@ -164,25 +164,25 @@ export function ApplyFlow() {
                   </DarkField>
                 </div>
                 <fieldset>
-                  <legend className="meta text-[0.62rem] text-ivory/50">Categories you supply</legend>
-                  <div className="mt-4 grid gap-px border border-ivory/10 bg-ivory/10 sm:grid-cols-2">
+                  <legend className="meta text-[0.62rem] text-obsidian/50">Categories you supply</legend>
+                  <div className="mt-4 grid gap-px border border-obsidian/10 bg-obsidian/10 sm:grid-cols-2">
                     {categories.map((c) => {
                       const on = f.categories.includes(c.slug)
                       return (
-                        <button key={c.slug} type="button" aria-pressed={on} onClick={() => toggle('categories', c.slug)} aria-invalid={!!errors.categories && !f.categories.length} className={cn('flex min-h-14 items-center justify-between gap-3 bg-obsidian px-4 py-3 text-left text-sm transition-colors', on ? 'bg-ivory/[0.06] text-ivory' : 'text-ivory/60 hover:text-ivory')}>
+                        <button key={c.slug} type="button" aria-pressed={on} onClick={() => toggle('categories', c.slug)} aria-invalid={!!errors.categories && !f.categories.length} className={cn('flex min-h-14 items-center justify-between gap-3 bg-ivory px-4 py-3 text-left text-sm transition-colors', on ? 'bg-ivory/[0.06] text-obsidian' : 'text-obsidian/60 hover:text-obsidian')}>
                           <span className="flex items-center gap-3">
-                            <span className={cn('grid size-4 shrink-0 place-items-center border', on ? 'border-champagne bg-champagne text-obsidian' : 'border-ivory/30')} aria-hidden>
+                            <span className={cn('grid size-4 shrink-0 place-items-center border', on ? 'border-champagne bg-champagne text-obsidian' : 'border-obsidian/30')} aria-hidden>
                               {on && <Check className="size-2.5" strokeWidth={2.5} />}
                             </span>
                             {c.name}
                           </span>
-                          {c.reviewLevel === 'enhanced' && <span className="meta shrink-0 text-[0.55rem] text-champagne/70">Enhanced review</span>}
+                          {c.reviewLevel === 'enhanced' && <span className="meta shrink-0 text-[0.55rem] text-teal/70">Enhanced review</span>}
                         </button>
                       )
                     })}
                   </div>
                   {errors.categories && <p className="mt-2 text-xs text-danger" role="alert">{errors.categories}</p>}
-                  {enhanced.length > 0 && <p className="mt-3 text-xs leading-relaxed text-ivory/45">{enhanced.map((c) => c.reviewNote).join(' ')}</p>}
+                  {enhanced.length > 0 && <p className="mt-3 text-xs leading-relaxed text-obsidian/45">{enhanced.map((c) => c.reviewNote).join(' ')}</p>}
                 </fieldset>
               </>
             )}
@@ -209,7 +209,7 @@ export function ApplyFlow() {
                     error={errors.taxId}
                     hint={
                       <span className="flex items-center gap-2">
-                        <Lock className="size-3 text-champagne" strokeWidth={1.6} aria-hidden /> Sensitive — encrypted in transit and at rest once connected.
+                        <Lock className="size-3 text-teal" strokeWidth={1.6} aria-hidden /> Sensitive — encrypted in transit and at rest once connected.
                       </span>
                     }
                   >
@@ -222,7 +222,7 @@ export function ApplyFlow() {
                     </select>
                   </DarkField>
                 </div>
-                <p className="border-l border-champagne/40 pl-4 text-xs leading-relaxed text-ivory/45">In this demonstration the number stays in your browser and is never sent or stored. Launch countries and tax handling are still to be confirmed.</p>
+                <p className="border-l border-champagne/40 pl-4 text-xs leading-relaxed text-obsidian/45">In this demonstration the number stays in your browser and is never sent or stored. Launch countries and tax handling are still to be confirmed.</p>
               </>
             )}
 
@@ -240,12 +240,12 @@ export function ApplyFlow() {
                   </DarkField>
                 </div>
                 <fieldset>
-                  <legend className="meta text-[0.62rem] text-ivory/50">Carriers you use</legend>
+                  <legend className="meta text-[0.62rem] text-obsidian/50">Carriers you use</legend>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {CARRIERS.map((c) => {
                       const on = f.carriers.includes(c)
                       return (
-                        <button key={c} type="button" aria-pressed={on} onClick={() => toggle('carriers', c)} aria-invalid={!!errors.carriers && !f.carriers.length} className={cn('min-h-11 border px-4 text-[0.78rem] transition-colors', on ? 'border-champagne text-champagne' : 'border-ivory/15 text-ivory/60 hover:border-ivory/40 hover:text-ivory')}>
+                        <button key={c} type="button" aria-pressed={on} onClick={() => toggle('carriers', c)} aria-invalid={!!errors.carriers && !f.carriers.length} className={cn('min-h-11 border px-4 text-[0.78rem] transition-colors', on ? 'border-champagne text-teal' : 'border-obsidian/15 text-obsidian/60 hover:border-obsidian/40 hover:text-obsidian')}>
                           {c}
                         </button>
                       )
@@ -254,11 +254,11 @@ export function ApplyFlow() {
                   {errors.carriers && <p className="mt-2 text-xs text-danger" role="alert">{errors.carriers}</p>}
                 </fieldset>
                 <fieldset>
-                  <legend className="meta text-[0.62rem] text-ivory/50">Blind dropship: can you ship in neutral packaging?</legend>
-                  <p className="mt-2 max-w-lg text-xs leading-relaxed text-ivory/45">Price-Select orders ship without supplier branding or invoices where possible, with Price-Select documentation.</p>
+                  <legend className="meta text-[0.62rem] text-obsidian/50">Blind dropship: can you ship in neutral packaging?</legend>
+                  <p className="mt-2 max-w-lg text-xs leading-relaxed text-obsidian/45">Price-Select orders ship without supplier branding or invoices where possible, with Price-Select documentation.</p>
                   <div className="mt-4 flex gap-2" role="radiogroup">
                     {(['yes', 'no'] as const).map((v) => (
-                      <label key={v} className={cn('flex min-h-11 min-w-24 cursor-pointer items-center justify-center border px-5 text-[0.72rem] font-semibold uppercase tracking-[0.16em] transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-1 has-[:focus-visible]:outline-gold', f.blindShip === v ? 'border-champagne text-champagne' : 'border-ivory/15 text-ivory/60 hover:text-ivory')}>
+                      <label key={v} className={cn('flex min-h-11 min-w-24 cursor-pointer items-center justify-center border px-5 text-[0.72rem] font-semibold uppercase tracking-[0.16em] transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-1 has-[:focus-visible]:outline-gold', f.blindShip === v ? 'border-champagne text-teal' : 'border-obsidian/15 text-obsidian/60 hover:text-obsidian')}>
                         <input type="radio" name="blind" value={v} checked={f.blindShip === v} onChange={() => set('blindShip', v)} className="sr-only" aria-invalid={!!errors.blindShip} />
                         {v === 'yes' ? 'Yes' : 'No'}
                       </label>
@@ -275,21 +275,21 @@ export function ApplyFlow() {
                   <FilePick dark label="Business registration" hint="PDF or image" accept=".pdf,image/*" files={f.registration} onChange={files('registration')} error={errors.registration} />
                   <FilePick dark label="Insurance certificate" hint="Product or general liability, PDF or image" accept=".pdf,image/*" files={f.insurance} onChange={files('insurance')} error={errors.insurance} />
                   <FilePick dark multiple label={`Product certificates${enhanced.length ? '' : ' (optional)'}`} hint={enhanced.length ? `Required for ${enhanced.map((c) => c.short).join(', ')}` : 'Safety, electrical or material certificates'} accept=".pdf,image/*" files={f.certificates} onChange={files('certificates')} error={errors.certificates} />
-                  <p className="text-xs text-ivory/40">Files stay in your browser in this demonstration — nothing is uploaded.</p>
+                  <p className="text-xs text-obsidian/40">Files stay in your browser in this demonstration — nothing is uploaded.</p>
                 </div>
-                <div className="space-y-3 border-t border-ivory/10 pt-8">
+                <div className="space-y-3 border-t border-obsidian/10 pt-8">
                   <Tick dark checked={f.authentic} onChange={(v) => set('authentic', v)} error={errors.authentic}>
                     I confirm all products I list are authentic and new.
                   </Tick>
                   <Tick dark checked={f.terms} onChange={(v) => set('terms', v)} error={errors.terms}>
-                    I agree to the Price-Select supplier terms <span className="text-ivory/40">(terms document to be provided before launch)</span>.
+                    I agree to the Price-Select supplier terms <span className="text-obsidian/40">(terms document to be provided before launch)</span>.
                   </Tick>
                 </div>
               </>
             )}
 
             {step === 5 && (
-              <dl className="border-t border-ivory/10">
+              <dl className="border-t border-obsidian/10">
                 {[
                   { s: 0, rows: [['Legal name', f.legalName], ['Trading name', f.tradingName || '—'], ['Business type', f.businessType], ['Website', f.website || '—'], ['Categories', categories.filter((c) => f.categories.includes(c.slug)).map((c) => c.name).join(', ')]] },
                   { s: 1, rows: [['Contact', f.contactName], ['Email', f.email], ['Phone', f.phone]] },
@@ -297,17 +297,17 @@ export function ApplyFlow() {
                   { s: 3, rows: [['Ships from', f.shipFrom], ['Carriers', f.carriers.join(', ')], ['Handling', f.handling], ['Neutral packaging', f.blindShip === 'yes' ? 'Yes' : 'No']] },
                   { s: 4, rows: [['Documents', [...f.registration, ...f.insurance, ...f.certificates].join(', ')], ['Confirmations', 'Authentic & new; supplier terms']] },
                 ].map((g) => (
-                  <div key={g.s} className="grid gap-4 border-b border-ivory/10 py-6 md:grid-cols-[10rem_1fr_auto]">
-                    <p className="eyebrow text-champagne/80">{STEPS[g.s]}</p>
+                  <div key={g.s} className="grid gap-4 border-b border-obsidian/10 py-6 md:grid-cols-[10rem_1fr_auto]">
+                    <p className="eyebrow text-teal/80">{STEPS[g.s]}</p>
                     <div className="space-y-2">
                       {g.rows.map(([k, v]) => (
                         <div key={k} className="grid grid-cols-[8rem_1fr] gap-4 text-sm">
-                          <dt className="text-ivory/45">{k}</dt>
-                          <dd className="break-words text-ivory/90">{v}</dd>
+                          <dt className="text-obsidian/45">{k}</dt>
+                          <dd className="break-words text-obsidian/90">{v}</dd>
                         </div>
                       ))}
                     </div>
-                    <button type="button" onClick={() => setStep(g.s)} className="link-line self-start meta text-[0.62rem] text-ivory/60 hover:text-champagne">
+                    <button type="button" onClick={() => setStep(g.s)} className="link-line self-start meta text-[0.62rem] text-obsidian/60 hover:text-teal">
                       Edit
                     </button>
                   </div>
@@ -319,11 +319,11 @@ export function ApplyFlow() {
 
         <div className="mt-14 flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
           {step > 0 ? (
-            <button type="button" onClick={() => setStep(step - 1)} className="link-line min-h-11 meta text-[0.65rem] text-ivory/60 hover:text-ivory">
+            <button type="button" onClick={() => setStep(step - 1)} className="link-line min-h-11 meta text-[0.65rem] text-obsidian/60 hover:text-obsidian">
               <ArrowLeft className="size-3.5" strokeWidth={1.5} aria-hidden /> Back
             </button>
           ) : (
-            <Link href="/supplier/login" className="link-line min-h-11 meta text-[0.65rem] text-ivory/60 hover:text-ivory">
+            <Link href="/supplier/login" className="link-line min-h-11 meta text-[0.65rem] text-obsidian/60 hover:text-obsidian">
               Already a partner? Sign in
             </Link>
           )}
@@ -344,34 +344,34 @@ function ApplicationStatus({ date, name }: { date: string; name: string }) {
   ] as const
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: EASE }} className="w-full max-w-2xl" role="status">
-      <p className="eyebrow text-champagne/80">Application status</p>
+      <p className="eyebrow text-teal/80">Application status</p>
       <h1 className="mt-5 font-display text-[clamp(2.5rem,4.6vw,4rem)] font-light leading-[0.95] tracking-[-0.03em]">
-        Application <em className="text-champagne">received</em>.
+        Application <em className="text-teal">received</em>.
       </h1>
-      <p className="mt-5 max-w-lg text-sm leading-relaxed text-ivory/55">
+      <p className="mt-5 max-w-lg text-sm leading-relaxed text-obsidian/55">
         Thank you{name ? `, ${name}` : ''}. Typical review time is to be confirmed. This is a demonstration — no application was sent.
       </p>
       <ol className="relative mt-14">
         <span aria-hidden className="absolute bottom-3 left-[5px] top-3 w-px bg-ivory/12" />
         {stages.map((s, i) => (
           <motion.li key={s.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.15, duration: 0.7, ease: EASE }} className="relative grid grid-cols-[2rem_1fr] pb-10 last:pb-0">
-            <span aria-hidden className={cn('relative mt-1.5 size-[11px] rounded-full border', s.state === 'done' && 'border-champagne bg-champagne', s.state === 'current' && 'border-champagne bg-obsidian shadow-[0_0_0_4px_rgba(242,139,130,0.15)]', s.state === 'todo' && 'border-ivory/30 bg-obsidian')} />
+            <span aria-hidden className={cn('relative mt-1.5 size-[11px] rounded-full border', s.state === 'done' && 'border-champagne bg-champagne', s.state === 'current' && 'border-champagne bg-ivory shadow-[0_0_0_4px_rgba(242,139,130,0.15)]', s.state === 'todo' && 'border-obsidian/30 bg-ivory')} />
             <div>
               <p className="flex flex-wrap items-center gap-3">
-                <span className={cn('font-display text-2xl', s.state === 'todo' ? 'text-ivory/45' : 'text-ivory')}>{s.label}</span>
-                <span className="meta text-[0.58rem] text-champagne/80">{s.state === 'done' ? 'Complete' : s.state === 'current' ? 'In progress' : 'Pending'}</span>
+                <span className={cn('font-display text-2xl', s.state === 'todo' ? 'text-obsidian/45' : 'text-obsidian')}>{s.label}</span>
+                <span className="meta text-[0.58rem] text-teal/80">{s.state === 'done' ? 'Complete' : s.state === 'current' ? 'In progress' : 'Pending'}</span>
               </p>
-              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-ivory/50">{s.detail}</p>
+              <p className="mt-1.5 max-w-md text-sm leading-relaxed text-obsidian/50">{s.detail}</p>
             </div>
           </motion.li>
         ))}
       </ol>
       <div className="sel-line--gold mt-14 h-px" aria-hidden />
       <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-        <Link href="/supplier" className="link-line link-line--static min-h-11 eyebrow text-champagne">
+        <Link href="/supplier" className="link-line link-line--static min-h-11 eyebrow text-teal">
           Preview the supplier portal
         </Link>
-        <Link href="/" className="link-line min-h-11 eyebrow text-ivory/60 hover:text-ivory sm:ml-8">
+        <Link href="/" className="link-line min-h-11 eyebrow text-obsidian/60 hover:text-obsidian sm:ml-8">
           Back to the storefront
         </Link>
       </div>

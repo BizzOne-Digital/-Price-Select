@@ -7,12 +7,12 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
   return (
     <>
       <PageBand eyebrow={`Welcome back, ${me.name}`} title="Your account." italic={['account.']}>
-        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-ivory/10 pt-6">
-          <p role="note" className="meta flex items-center gap-3 text-champagne">
+        <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-obsidian/10 pt-6">
+          <p role="note" className="meta flex items-center gap-3 text-teal">
             <span className="size-1.5 rounded-full bg-warning" aria-hidden />
             Demo account
           </p>
-          <p className="text-xs text-ivory/55">Authentication is not yet connected. Orders, cases and details shown are demonstration data.</p>
+          <p className="text-xs text-obsidian/55">Authentication is not yet connected. Orders, cases and details shown are demonstration data.</p>
         </div>
       </PageBand>
       <AccountNav />
