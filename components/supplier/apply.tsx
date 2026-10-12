@@ -355,7 +355,7 @@ function ApplicationStatus({ date, name }: { date: string; name: string }) {
         <span aria-hidden className="absolute bottom-3 left-[5px] top-3 w-px bg-ivory/12" />
         {stages.map((s, i) => (
           <motion.li key={s.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.15, duration: 0.7, ease: EASE }} className="relative grid grid-cols-[2rem_1fr] pb-10 last:pb-0">
-            <span aria-hidden className={cn('relative mt-1.5 size-[11px] rounded-full border', s.state === 'done' && 'border-champagne bg-champagne', s.state === 'current' && 'border-champagne bg-ivory shadow-[0_0_0_4px_rgba(242,139,130,0.15)]', s.state === 'todo' && 'border-obsidian/30 bg-ivory')} />
+            <span aria-hidden className={cn('relative mt-1.5 size-[11px] rounded-full border', s.state === 'done' && 'border-champagne bg-champagne', s.state === 'current' && 'border-champagne bg-ivory shadow-[0_0_0_4px_rgba(255,122,26,0.15)]', s.state === 'todo' && 'border-obsidian/30 bg-ivory')} />
             <div>
               <p className="flex flex-wrap items-center gap-3">
                 <span className={cn('font-display text-2xl', s.state === 'todo' ? 'text-obsidian/45' : 'text-obsidian')}>{s.label}</span>

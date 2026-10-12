@@ -167,7 +167,7 @@ export function PageHero({
 export function PageBand({ eyebrow, title, italic = [], crumbs, children }: { eyebrow: string; title: string; italic?: string[]; crumbs?: { href: string; label: string }[]; children?: ReactNode }) {
   return (
     <section className="relative isolate overflow-hidden bg-ivory text-obsidian">
-      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#0f766e08,transparent_65%)]" />
+      <div aria-hidden className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,#5420C708,transparent_65%)]" />
       <div className="container-luxe relative pb-12 pt-36 md:pb-16 md:pt-44">
         {crumbs && <Breadcrumbs items={crumbs} className="mb-8" />}
         <Eyebrow>{eyebrow}</Eyebrow>

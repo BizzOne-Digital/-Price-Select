@@ -46,7 +46,7 @@ export function Hero() {
         </AnimatePresence>
       </motion.div>
       <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-ivory via-ivory/90 to-ivory/60" />
-      <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_85%_20%,#0f766e08,transparent_55%),radial-gradient(ellipse_at_65%_85%,#f28b8210,transparent_50%)]" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_85%_20%,#5420C708,transparent_55%),radial-gradient(ellipse_at_65%_85%,#FF7A1A10,transparent_50%)]" />
       {/* A scanning hairline drifts down the frame: a quiet sign of precision. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute inset-x-0 h-[40%] animate-scan bg-gradient-to-b from-transparent via-champagne/[0.05] to-transparent" />

@@ -45,7 +45,7 @@ export function AdminLoginForm() {
       </label>
       <div className="flex items-center justify-between gap-4 text-sm">
         <label className="flex min-h-11 cursor-pointer items-center gap-3 text-obsidian/70">
-          <input type="checkbox" name="remember" className="size-4 accent-[#f28b82]" />
+          <input type="checkbox" name="remember" className="size-4 accent-[#FF7A1A]" />
           Remember this device
         </label>
         <Link href="/admin/login" className="link-line link-line--static text-obsidian/70 hover:text-teal">

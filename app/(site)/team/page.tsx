@@ -43,7 +43,7 @@ export default function TeamPage() {
                 <figure className="group">
                   <div className="sel-frame relative aspect-[3/4] overflow-hidden bg-pearl">
                     {/* Portrait placeholder: monogram on architectural ground. */}
-                    <div className="absolute inset-0 bg-[linear-gradient(135deg,#e8e4db,#d9d4c8)]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(135deg,#F4F0FF,#E4DCFA)]" />
                     <div className="absolute inset-0 grid place-items-center">
                       <span className="font-display text-[5rem] font-light italic text-obsidian/15 transition-transform duration-1000 ease-[var(--ease-luxe)] group-hover:scale-110">P/S</span>
                     </div>

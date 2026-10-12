@@ -5,22 +5,23 @@
 
 /* ───────────────────────── Price-Select design tokens ───────────────────────── */
 @theme {
-  /* Brand palette: deep teal (primary), warm ivory (page), charcoal (text), soft coral (accent). */
-  --color-teal: #0f766e;
-  --color-coral: #f28b82;
-  --color-midnight: #111827;
-  --color-obsidian: #1f2937;
-  --color-ink: #1f2937;
-  --color-ivory: #faf7f2;
-  --color-pearl: #faf7f2;
-  --color-stone: #d9d4c8;
-  /* Accent tokens: coral on dark surfaces, teal on light surfaces. */
-  --color-champagne: #f28b82;
-  --color-gold: #0f766e;
-  --color-gold-deep: #0f766e;
+  /* Brand palette: purple (primary), white (page), orange (accent), lavender (soft surfaces). */
+  --color-teal: #5420C7;
+  --color-coral: #FF7A1A;
+  --color-midnight: #1A1033;
+  --color-obsidian: #24164A;
+  --color-ink: #24164A;
+  --color-ivory: #FFFFFF;
+  --color-pearl: #F4F0FF;
+  --color-stone: #E4DCFA;
+  --color-lavender: #F4F0FF;
+  /* Accent tokens: orange on dark surfaces, purple on light surfaces. */
+  --color-champagne: #FF7A1A;
+  --color-gold: #5420C7;
+  --color-gold-deep: #5420C7;
   --color-slate: #66707c;
   --color-mist: #9aa2ab;
-  --color-ocean: #123b52;
+  --color-ocean: #3A1590;
   --color-success: #5f8a6e;
   --color-warning: #c08a3e;
   --color-danger: #b4574b;
@@ -135,7 +136,7 @@
   }
 }
 
-/* Teal keeps accent text readable on the ivory website surfaces. */
+/* Purple keeps accent text readable on the ivory website surfaces. */
 :root,
 .bg-midnight,
 .bg-obsidian {
