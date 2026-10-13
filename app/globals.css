@@ -125,10 +125,6 @@
   em {
     font-style: italic;
   }
-  button:not(:disabled),
-  [role='button']:not(:disabled) {
-    cursor: pointer;
-  }
   input,
   select,
   textarea {
@@ -285,31 +281,16 @@ html.lenis body {
   background: radial-gradient(120% 90% at 50% 40%, transparent 40%, rgb(250 247 242 / 0.7));
 }
 
-/* Custom cursor */
-.cursor-dot,
-.cursor-ring {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  z-index: 100;
-  will-change: transform;
+/* Brand tag cursor (hotspot at the tag tip). Touch devices never show it; inputs keep the text caret. */
+html {
+  cursor: url('/cursor-tag.svg') 2 2, auto;
 }
-@media (hover: none), (pointer: coarse) {
-  .cursor-dot,
-  .cursor-ring {
-    display: none !important;
-  }
-}
-html.has-cursor,
-html.has-cursor a,
-html.has-cursor button {
-  cursor: none;
-}
-html.has-cursor input,
-html.has-cursor textarea,
-html.has-cursor select {
-  cursor: text;
+a,
+button:not(:disabled),
+[role='button']:not(:disabled),
+label,
+summary {
+  cursor: url('/cursor-tag-hover.svg') 2 2, pointer;
 }
 
 /* Hide scrollbars for horizontal rails while keeping them scrollable. */

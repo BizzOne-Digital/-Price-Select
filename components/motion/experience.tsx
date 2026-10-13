@@ -1,13 +1,13 @@
 'use client'
 
 import Lenis from 'lenis'
-import { AnimatePresence, motion, MotionConfig, useMotionValue, useSpring } from 'motion/react'
+import { AnimatePresence, motion, MotionConfig } from 'motion/react'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState, type ReactNode } from 'react'
 import { CURTAIN, EASE } from './primitives'
 
 /**
- * Site-wide experience layer: reduced-motion config, Lenis smooth scrolling, the custom cursor,
+ * Site-wide experience layer: reduced-motion config, Lenis smooth scrolling,
  * the ambient grain, and the first-visit preloader.
  */
 export function Experience({ children }: { children: ReactNode }) {
@@ -35,7 +35,6 @@ export function Experience({ children }: { children: ReactNode }) {
   return (
     <MotionConfig reducedMotion="user">
       <Preloader />
-      <Cursor />
       <div aria-hidden className="grain-wrap">
         <div className="grain" />
       </div>
@@ -142,73 +141,5 @@ function Preloader() {
         </motion.div>
       )}
     </AnimatePresence>
-  )
-}
-
-/* ───────── Cursor: refined dot + contextual label ring. Desktop / fine pointers only. ───────── */
-function Cursor() {
-  const x = useMotionValue(-100)
-  const y = useMotionValue(-100)
-  const rx = useSpring(x, { stiffness: 260, damping: 28, mass: 0.5 })
-  const ry = useSpring(y, { stiffness: 260, damping: 28, mass: 0.5 })
-  const [label, setLabel] = useState<string | null>(null)
-  const [hover, setHover] = useState(false)
-  const [enabled, setEnabled] = useState(false)
-
-  useEffect(() => {
-    const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (!fine || reduce) return
-    setEnabled(true)
-    document.documentElement.classList.add('has-cursor')
-    const move = (e: PointerEvent) => {
-      x.set(e.clientX)
-      y.set(e.clientY)
-      const t = (e.target as HTMLElement).closest<HTMLElement>('[data-cursor], a, button, [role="button"], input, select, textarea, label')
-      setLabel(t?.dataset.cursor ?? null)
-      setHover(!!t && !t.dataset.cursor && !t.matches('input, select, textarea'))
-    }
-    const leave = () => {
-      x.set(-100)
-      y.set(-100)
-    }
-    window.addEventListener('pointermove', move)
-    document.addEventListener('pointerleave', leave)
-    return () => {
-      window.removeEventListener('pointermove', move)
-      document.removeEventListener('pointerleave', leave)
-      document.documentElement.classList.remove('has-cursor')
-    }
-  }, [x, y])
-
-  if (!enabled) return null
-  return (
-    <>
-      <motion.div aria-hidden className="cursor-dot" style={{ x, y }}>
-        <div className="-ml-[3px] -mt-[3px] size-1.5 rounded-full bg-champagne mix-blend-difference" />
-      </motion.div>
-      <motion.div aria-hidden className="cursor-ring" style={{ x: rx, y: ry }}>
-        <motion.div
-          className="flex items-center justify-center rounded-full border border-champagne/60 text-[9px] font-semibold uppercase tracking-[0.22em] text-obsidian"
-          animate={{
-            width: label ? 84 : hover ? 46 : 30,
-            height: label ? 84 : hover ? 46 : 30,
-            marginLeft: label ? -42 : hover ? -23 : -15,
-            marginTop: label ? -42 : hover ? -23 : -15,
-            backgroundColor: label ? 'rgba(255,122,26,0.95)' : 'rgba(255,122,26,0)',
-            opacity: 1,
-          }}
-          transition={{ duration: 0.45, ease: EASE }}
-        >
-          <AnimatePresence>
-            {label && (
-              <motion.span initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.6 }}>
-                {label}
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </motion.div>
-    </>
   )
 }
