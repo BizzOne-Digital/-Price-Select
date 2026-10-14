@@ -1,22 +1,25 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'motion/react'
 import { Plus } from 'lucide-react'
 import type { Product } from '@/lib/types'
 import { money } from '@/lib/format'
-import { categoryName } from '@/lib/data/categories'
-import { STOCK_LABEL } from '@/lib/data/products'
+import { STOCK_LABEL } from '@/lib/labels'
+import { SafeImage } from '@/components/ui/safe-image'
+import { useCategoryName } from './site-context'
 import { cn } from '@/lib/utils'
 import { useCart } from './cart'
 import { useToast } from '@/components/ui/toast'
 import { EASE } from '@/components/motion/primitives'
 
 export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5]', sizes = '(min-width: 1024px) 25vw, 50vw' }: { product: Product; index?: number; dark?: boolean; aspect?: string; sizes?: string }) {
-  const { add, setOpen } = useCart()
+  const { add, setOpen, busy } = useCart()
   const toast = useToast()
+  const categoryName = useCategoryName()
   const price = p.seasonalPrice ?? p.price
+  const img = p.images[0]
+  const orderable = p.stock !== 'out_of_stock'
 
   return (
     <motion.article
@@ -30,15 +33,15 @@ export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5
       <Link href={`/products/${p.slug}`} data-cursor="Select" className="block" aria-label={`${p.name}, ${money(price)}`}>
         <div className={cn('sel-frame relative', aspect)}>
           <div className={cn('absolute inset-0 overflow-hidden', dark ? 'bg-ivory' : 'bg-pearl')}>
-            <Image
-              src={p.images[0].src}
-              alt={p.images[0].alt}
+            <SafeImage
+              src={img?.src ?? ''}
+              alt={img?.alt ?? p.name}
               fill
               sizes={sizes}
               className="object-cover saturate-[0.85] transition-transform duration-[1.6s] ease-[var(--ease-luxe)] group-hover:scale-[1.07]"
             />
             {p.images[1] && (
-              <Image
+              <SafeImage
                 src={p.images[1].src}
                 alt=""
                 aria-hidden
@@ -63,15 +66,17 @@ export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5
       {/* Quick add sits outside the link so it stays a real button. */}
       <button
         type="button"
-        onClick={() => {
-          add(p.slug)
-          toast({ title: `${p.name} added`, body: 'Prices exclude applicable taxes and shipping.' })
-          setOpen(true)
+        disabled={!orderable || busy}
+        onClick={async () => {
+          if (await add(p.id)) {
+            toast({ title: `${p.name} added`, body: 'Prices exclude applicable taxes and shipping.' })
+            setOpen(true)
+          } else toast({ title: 'Could not add to cart', body: 'Please try again.', tone: 'error' })
         }}
         className="absolute inset-x-4 bottom-4 z-[3] flex h-11 translate-y-3 items-center justify-between bg-ivory px-4 text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-obsidian opacity-0 transition-all duration-500 ease-[var(--ease-luxe)] hover:bg-champagne focus-visible:translate-y-0 focus-visible:opacity-100 group-hover:translate-y-0 group-hover:opacity-100 max-md:hidden"
         aria-label={`Add ${p.name} to cart`}
       >
-        Add to cart <Plus className="size-3.5" strokeWidth={1.5} />
+        {orderable ? 'Add to cart' : 'Out of stock'} <Plus className="size-3.5" strokeWidth={1.5} />
       </button>
       </div>
 
@@ -92,7 +97,7 @@ export function ProductCard({ product: p, index = 0, dark, aspect = 'aspect-[4/5
         </div>
         <p className={cn('mt-3 flex items-center gap-2 text-xs', dark ? 'text-obsidian/45' : 'text-slate')}>
           <span className={cn('size-1.5 rounded-full', p.stock === 'in_stock' ? 'bg-success' : p.stock === 'low_stock' ? 'bg-warning' : 'bg-mist')} aria-hidden />
-          {STOCK_LABEL[p.stock]} · {p.deliveryEstimate.split(',')[0]}
+          {STOCK_LABEL[p.stock]}{p.deliveryEstimate && ` · ${p.deliveryEstimate.split(',')[0]}`}
         </p>
       </div>
     </motion.article>

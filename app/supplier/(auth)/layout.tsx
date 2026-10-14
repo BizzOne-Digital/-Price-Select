@@ -44,10 +44,7 @@ export default function SupplierAuthLayout({ children }: { children: ReactNode }
       <div className="relative flex min-h-svh flex-col overflow-hidden lg:min-h-0">
         <div aria-hidden className="aurora opacity-25" />
         <div className="relative flex flex-1 flex-col px-5 py-12 md:px-12 lg:px-20 lg:py-16">{children}</div>
-        <p className="relative flex items-center gap-3 border-t border-obsidian/10 px-5 py-5 meta text-[0.62rem] text-obsidian/40 md:px-12 lg:px-20">
-          <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-hidden />
-          Demo sign-in — authentication provider not yet connected
-        </p>
+        <p className="relative border-t border-obsidian/10 px-5 py-5 meta text-[0.62rem] text-obsidian/40 md:px-12 lg:px-20">Supplier accounts are reviewed and approved by {SITE.name}</p>
       </div>
     </div>
   )

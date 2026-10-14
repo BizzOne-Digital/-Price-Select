@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { IMAGES } from '@/lib/img'
-import { categories } from '@/lib/data/categories'
+import { useSite } from '@/components/commerce/site-context'
 import { EASE, Magnetic, SplitText } from '@/components/motion/primitives'
 import { ButtonLink, TextLink } from '@/components/site/ui'
 
@@ -14,7 +14,8 @@ const PLATES = [
   { src: IMAGES.heroSolar, alt: 'Rooftop solar arrays at sunset above a forest', label: 'Selection' },
 ]
 
-export function Hero() {
+export function Hero({ headline = 'Price-Select. Just for you.' }: { headline?: string }) {
+  const { categories } = useSite()
   const ref = useRef<HTMLElement>(null)
   const [plate, setPlate] = useState(0)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
@@ -57,7 +58,7 @@ export function Hero() {
           Jr-Procurement.com <span className="sel-mark hidden sm:inline-block" /> <span className="hidden sm:inline">Price / Select</span>
         </motion.p>
 
-        <SplitText as="h1" immediate delay={0.45} stagger={0.09} text={'Price-Select.\nJust for you.'} italicWords={['Just', 'for', 'you']} className="mt-8 text-display-1" />
+        <SplitText as="h1" immediate delay={0.45} stagger={0.09} text={headline.replace(/\.\s+/, '.\n')} italicWords={['Just', 'for', 'you']} className="mt-8 text-display-1" />
 
         <div className="mt-12 grid gap-10 md:grid-cols-12 md:items-end">
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1, duration: 1.1, ease: EASE }} className="max-w-md text-base leading-relaxed text-obsidian/75 md:col-span-5 md:text-[1.05rem]">

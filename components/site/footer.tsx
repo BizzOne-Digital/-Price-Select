@@ -17,7 +17,7 @@ const COLS = [
   { title: 'Policies', links: [['/policies/privacy', 'Privacy'], ['/policies/returns', 'Returns']] },
 ]
 
-export function Footer() {
+export function Footer({ email = SITE.email }: { email?: string }) {
   return (
     <footer className="relative isolate overflow-hidden bg-ivory text-obsidian">
       <div aria-hidden className="aurora opacity-40" />
@@ -31,8 +31,8 @@ export function Footer() {
           </p>
         </Reveal>
         <Reveal delay={0.2} className="mt-12">
-          <a href={`mailto:${SITE.email}`} className="link-line link-line--static group text-base text-obsidian/80 hover:text-obsidian md:text-lg">
-            {SITE.email}
+          <a href={`mailto:${email}`} className="link-line link-line--static group text-base text-obsidian/80 hover:text-obsidian md:text-lg">
+            {email}
             <ArrowUpRight className="size-4 transition-transform duration-500 group-hover:-translate-y-1 group-hover:translate-x-1" strokeWidth={1.3} />
           </a>
         </Reveal>

@@ -1,21 +1,22 @@
 import type { Metadata } from 'next'
 import { PageBand } from '@/components/site/ui'
 import { DocHeader, DocLabel, DocumentFrame } from '@/components/templates/document'
-import { customers, getOrder } from '@/lib/data/operations'
+import { SAMPLE_ORDER } from '@/components/templates/sample'
 import { date, money } from '@/lib/format'
 
 export const metadata: Metadata = { title: 'Invoice template' }
 
 export default function InvoiceTemplate() {
-  const o = getOrder('PS-240118')!
-  const customer = customers.find((c) => c.id === o.customerId)!
+  // Fictional sample data only; this public preview never reads live orders or customers.
+  const o = SAMPLE_ORDER
+  const customer = { name: o.customerName, email: o.email }
   const paid = o.payment === 'captured'
 
   return (
     <>
       <div data-print-hide>
         <PageBand eyebrow="Templates · Documents" title="Invoice." italic={['Invoice.']}>
-          <p className="mt-8 max-w-xl text-sm leading-relaxed text-obsidian/60">Customer invoice shown with a sample order. Use Print / Save as PDF to see how it prints.</p>
+          <p className="mt-8 max-w-xl text-sm leading-relaxed text-obsidian/60">Customer invoice shown with a fictional sample order. Use Print / Save as PDF to see how it prints.</p>
         </PageBand>
       </div>
       <DocumentFrame>
@@ -65,7 +66,7 @@ export default function InvoiceTemplate() {
                 </td>
               </tr>
               {f.lines.map((l) => (
-                <tr key={l.productSlug} className="border-b border-[#e6e1d6]">
+                <tr key={l.lineId} className="border-b border-[#e6e1d6]">
                   <td className="py-3 pr-4">{l.name}</td>
                   <td className="py-3 text-right tabular-nums">{l.qty}</td>
                   <td className="py-3 text-right tabular-nums">{money(l.unitPrice)}</td>

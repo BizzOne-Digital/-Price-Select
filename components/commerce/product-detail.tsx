@@ -1,9 +1,11 @@
 'use client'
 
-import Image from 'next/image'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowLeft, ArrowRight, Plus } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Heart, Plus } from 'lucide-react'
 import { useId, useState, type ReactNode } from 'react'
+import { api, errorText } from '@/lib/client/api'
+import { SafeImage } from '@/components/ui/safe-image'
+import { useSession } from './site-context'
 import type { Product } from '@/lib/types'
 import { pad } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -14,7 +16,8 @@ import { useCart } from './cart'
 import { Qty } from './cart-drawer'
 
 /** Main image with crossfading plates and thumbnails. Arrow keys move between images. */
-export function ProductGallery({ images, name }: { images: Product['images']; name: string }) {
+export function ProductGallery({ images: given, name }: { images: Product['images']; name: string }) {
+  const images = given.length ? given : [{ src: '', alt: name }]
   const [i, setI] = useState(0)
   const go = (n: number) => setI((n + images.length) % images.length)
   const img = images[i]
@@ -33,7 +36,7 @@ export function ProductGallery({ images, name }: { images: Product['images']; na
       {images.length > 1 && (
         <ul className="flex gap-3 lg:w-20 lg:flex-col">
           {images.map((m, n) => (
-            <li key={m.src} className="w-20 lg:w-full">
+            <li key={`${n}-${m.src}`} className="w-20 lg:w-full">
               <button
                 type="button"
                 onClick={() => setI(n)}
@@ -41,7 +44,7 @@ export function ProductGallery({ images, name }: { images: Product['images']; na
                 aria-current={n === i ? 'true' : undefined}
                 className={cn('relative block aspect-[4/5] w-full overflow-hidden bg-ivory transition-opacity duration-500', n === i ? 'opacity-100' : 'opacity-45 hover:opacity-80')}
               >
-                <Image src={m.src} alt="" fill sizes="80px" className="object-cover" />
+                <SafeImage src={m.src} alt="" fill sizes="80px" className="object-cover" />
                 <span aria-hidden className={cn('absolute inset-x-0 bottom-0 h-px origin-left bg-champagne transition-transform duration-700 ease-[var(--ease-luxe)]', n === i ? 'scale-x-100' : 'scale-x-0')} />
               </button>
             </li>
@@ -60,7 +63,7 @@ export function ProductGallery({ images, name }: { images: Product['images']; na
               exit={{ opacity: 0 }}
               transition={{ duration: 1, ease: EASE }}
             >
-              <Image src={img.src} alt={img.alt} fill priority={i === 0} sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
+              <SafeImage src={img.src} alt={img.alt} fill priority={i === 0} sizes="(min-width: 1024px) 55vw, 100vw" className="object-cover" />
             </motion.div>
           </AnimatePresence>
         </div>
@@ -84,29 +87,59 @@ export function ProductGallery({ images, name }: { images: Product['images']; na
   )
 }
 
-export function BuyBox({ product: p }: { product: Product }) {
-  const { add, setOpen } = useCart()
+export function BuyBox({ product: p, saved: initialSaved = false }: { product: Product; saved?: boolean }) {
+  const { add, setOpen, busy } = useCart()
   const toast = useToast()
+  const session = useSession()
   const [qty, setQty] = useState(1)
+  const [saved, setSaved] = useState(initialSaved)
+  const [saving, setSaving] = useState(false)
   const orderable = p.status === 'published' && p.stock !== 'out_of_stock'
+  const max = p.stock === 'made_to_order' ? 99 : Math.max(1, Math.min(p.stockQty, 99))
+
+  const toggleSave = async () => {
+    setSaving(true)
+    try {
+      await api(`/api/account/saved/${p.id}`, { method: 'PUT', body: { saved: !saved } })
+      setSaved(!saved)
+      toast({ title: saved ? 'Removed from saved products' : 'Saved to your account' })
+    } catch (e) {
+      toast({ title: 'Could not update saved products', body: errorText(e), tone: 'error' })
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="flex flex-wrap items-stretch gap-3">
       <div className={cn(!orderable && 'pointer-events-none opacity-40')} aria-hidden={!orderable || undefined}>
-        <Qty value={qty} onChange={(n) => setQty(Math.max(1, Math.min(n, 99)))} label={p.name} dark />
+        <Qty value={qty} onChange={(n) => setQty(Math.max(1, Math.min(n, max)))} label={p.name} dark />
       </div>
       <button
         type="button"
-        disabled={!orderable}
-        onClick={() => {
-          add(p.slug, qty)
-          toast({ title: `${p.name} added${qty > 1 ? ` × ${qty}` : ''}`, body: 'Prices exclude applicable taxes and shipping.' })
-          setOpen(true)
+        disabled={!orderable || busy}
+        onClick={async () => {
+          if (await add(p.id, qty)) {
+            toast({ title: `${p.name} added${qty > 1 ? ` × ${qty}` : ''}`, body: 'Prices exclude applicable taxes and shipping.' })
+            setOpen(true)
+          } else toast({ title: 'Could not add to cart', body: 'Please try again.', tone: 'error' })
         }}
         className={btnClass('light', 'min-w-0 flex-1 disabled:cursor-not-allowed')}
       >
-        <BtnInner variant="light" icon={orderable}>{orderable ? 'Add to cart' : 'Not yet available'}</BtnInner>
+        <BtnInner variant="light" icon={orderable}>{orderable ? 'Add to cart' : p.status === 'published' ? 'Out of stock' : 'Not yet available'}</BtnInner>
       </button>
+      {session?.role === 'customer' && p.status === 'published' && (
+        <button
+          type="button"
+          onClick={toggleSave}
+          disabled={saving}
+          aria-pressed={saved}
+          aria-label={saved ? `Remove ${p.name} from saved products` : `Save ${p.name}`}
+          className="grid size-12 shrink-0 place-items-center border border-obsidian/20 transition-colors hover:border-gold-deep disabled:opacity-50"
+        >
+          <Heart className={cn('size-4', saved ? 'fill-gold-deep text-gold-deep' : 'text-obsidian')} strokeWidth={1.3} />
+        </button>
+      )}
     </div>
   )
 }

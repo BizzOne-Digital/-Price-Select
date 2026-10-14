@@ -1,32 +1,32 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { ShieldCheck } from 'lucide-react'
-import { categories, getCategory } from '@/lib/data/categories'
-import { productsIn } from '@/lib/data/products'
+import { getCategory, listCategories, productsInCategory } from '@/lib/server/services/catalog'
+import { SafeImage } from '@/components/ui/safe-image'
 import { pad } from '@/lib/format'
 import { ProductCard } from '@/components/commerce/product-card'
 import { LineReveal, Reveal, Stagger, StaggerItem } from '@/components/motion/primitives'
-import { ButtonLink, DemoNote, Eyebrow, PageHero } from '@/components/site/ui'
+import { ButtonLink, Eyebrow, PageHero } from '@/components/site/ui'
 
-export const generateStaticParams = () => categories.map((c) => ({ slug: c.slug }))
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const c = getCategory((await params).slug)
+  const c = await getCategory((await params).slug).catch(() => null)
   if (!c) return {}
   return {
     title: c.name,
     description: `${c.description} Supplied by approved Price-Select partners.`,
     alternates: { canonical: `/categories/${c.slug}` },
-    openGraph: { title: `${c.name} · Price-Select`, description: c.description, images: [{ url: c.image }] },
+    openGraph: { title: `${c.name} · Price-Select`, description: c.description, images: c.image ? [{ url: c.image }] : undefined },
   }
 }
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
-  const c = getCategory((await params).slug)
+  const slug = (await params).slug
+  const [categories, items] = await Promise.all([listCategories(), productsInCategory(slug)])
+  const c = categories.find((x) => x.slug === slug)
   if (!c) notFound()
-  const items = productsIn(c.slug)
   const index = categories.indexOf(c)
   const siblings = categories.filter((x) => x.slug !== c.slug)
 
@@ -35,7 +35,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       <PageHero
         eyebrow={`Department ${pad(index + 1)} / ${pad(categories.length)}`}
         title={c.name}
-        image={c.image}
+        image={c.image || '/placeholder.svg'}
         imageAlt={c.imageAlt}
         size="md"
         crumbs={[
@@ -111,7 +111,6 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-slate">Products for this department are in supplier review and will appear once they are approved for publication.</p>
             </div>
           )}
-          <DemoNote className="mt-16">Demonstration products and sample pricing</DemoNote>
         </div>
       </section>
 
@@ -127,7 +126,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               <StaggerItem as="li" key={s.slug} className="border-b border-obsidian/10 sm:odd:border-r lg:border-r lg:[&:nth-child(4n)]:border-r-0">
                 <Link href={`/categories/${s.slug}`} className="group flex items-center gap-5 p-5 md:p-6">
                   <span className="relative block size-16 shrink-0 overflow-hidden bg-ivory">
-                    <Image src={s.image} alt="" fill sizes="64px" className="object-cover opacity-80 transition-transform duration-1000 group-hover:scale-110" />
+                    <SafeImage src={s.image} alt="" fill sizes="64px" className="object-cover opacity-80 transition-transform duration-1000 group-hover:scale-110" />
                   </span>
                   <span className="min-w-0">
                     <span className="meta block text-obsidian/40">{pad(categories.indexOf(s) + 1)}</span>

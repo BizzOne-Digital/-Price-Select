@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { ReturnsCenter } from '@/components/commerce/account-forms'
-import { DEMO_CUSTOMER_ID, ordersFor, returnCases } from '@/lib/data/operations'
+import { requirePage } from '@/lib/server/page-auth'
+import { listCases } from '@/lib/server/services/cases'
+import { myOrders } from '@/lib/server/services/commerce'
 
 export const metadata: Metadata = {
   title: 'Returns & support',
@@ -10,10 +12,12 @@ export const metadata: Metadata = {
   robots: { index: false },
 }
 
-export default function Page() {
+export default async function Page() {
+  const actor = await requirePage(['customer'], '/sign-in/customers')
+  const [cases, orders] = await Promise.all([listCases(actor), myOrders(actor)])
   return (
     <Suspense>
-      <ReturnsCenter cases={returnCases.filter((c) => c.customerId === DEMO_CUSTOMER_ID)} orders={ordersFor(DEMO_CUSTOMER_ID)} />
+      <ReturnsCenter cases={cases} orders={orders} />
     </Suspense>
   )
 }

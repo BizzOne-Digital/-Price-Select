@@ -1,11 +1,11 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowUpRight } from 'lucide-react'
 import { useState } from 'react'
-import { categories } from '@/lib/data/categories'
+import { SafeImage } from '@/components/ui/safe-image'
+import { useSite } from './site-context'
 import { cn } from '@/lib/utils'
 import { EASE } from '@/components/motion/primitives'
 import { ButtonLink } from '@/components/site/ui'
@@ -15,8 +15,10 @@ import { ButtonLink } from '@/components/site/ui'
  * Hover, focus or tap selects a department; the CTA enters it.
  */
 export function CategoryShowcase() {
+  const { categories } = useSite()
   const [active, setActive] = useState(0)
-  const c = categories[active]
+  const c = categories[Math.min(active, categories.length - 1)]
+  if (!c) return null
 
   return (
     <div className="relative isolate min-h-[100svh] overflow-hidden bg-midnight text-ivory">
@@ -30,13 +32,13 @@ export function CategoryShowcase() {
           exit={{ opacity: 0, scale: 1, filter: 'blur(6px)' }}
           transition={{ duration: 1.4, ease: EASE }}
         >
-          <Image src={c.image} alt={c.imageAlt} fill sizes="100vw" className="object-cover" />
+          <SafeImage src={c.image} alt={c.imageAlt} fill sizes="100vw" className="object-cover" />
         </motion.div>
       </AnimatePresence>
       {/* Preload the rest so the swap is instant. */}
       <div aria-hidden className="hidden">
         {categories.map((x) => (
-          <Image key={x.slug} src={x.image} alt="" width={16} height={16} />
+          <SafeImage key={x.slug} src={x.image} alt="" width={16} height={16} />
         ))}
       </div>
       <div aria-hidden className="absolute inset-0 -z-10" style={{ background: 'linear-gradient(90deg, rgb(17 24 39 / 0.88), rgb(17 24 39 / 0.35) 55%, rgb(17 24 39 / 0.1))' }} />

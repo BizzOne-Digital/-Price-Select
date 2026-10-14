@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
-import { DEMO_CUSTOMER_ID, notifications, ordersFor, returnCases } from '@/lib/data/operations'
-import { getProduct } from '@/lib/data/products'
+import { requirePage } from '@/lib/server/page-auth'
+import { listCases } from '@/lib/server/services/cases'
+import { myOrders } from '@/lib/server/services/commerce'
+import { savedProducts } from '@/lib/server/services/customers'
+import { listNotifications } from '@/lib/server/services/notify'
 import { date, money, pad, titleCase } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { OrderRow, SectionTitle } from '@/components/commerce/account-blocks'
 import { Status } from '@/components/commerce/account-ui'
-import { SAVED_DEMO } from '@/components/commerce/account-data'
+import { SafeImage } from '@/components/ui/safe-image'
 import { Reveal } from '@/components/motion/primitives'
 import { TextLink } from '@/components/site/ui'
 
@@ -18,12 +20,11 @@ export const metadata: Metadata = {
   robots: { index: false },
 }
 
-export default function AccountOverview() {
-  const orders = [...ordersFor(DEMO_CUSTOMER_ID)].sort((a, b) => b.placedAt.localeCompare(a.placedAt))
-  const cases = returnCases.filter((c) => c.customerId === DEMO_CUSTOMER_ID)
+export default async function AccountOverview() {
+  const actor = await requirePage(['customer'], '/sign-in/customers')
+  const [orders, cases, saved, notifications] = await Promise.all([myOrders(actor), listCases(actor), savedProducts(actor), listNotifications(actor, 4)])
   const open = cases.filter((c) => !['resolved', 'declined'].includes(c.status))
   const inTransit = orders.flatMap((o) => o.fulfillments).filter((f) => f.status === 'shipped').length
-  const saved = SAVED_DEMO.map(getProduct).filter((p) => !!p)
   const unread = notifications.filter((n) => !n.read).length
 
   const stats = [
@@ -49,17 +50,22 @@ export default function AccountOverview() {
       <div className="grid gap-16 lg:grid-cols-12">
         <section className="lg:col-span-7" aria-label="Recent orders">
           <SectionTitle title="Recent orders" action={<TextLink href="/account/orders">All orders</TextLink>} />
-          <ul>
-            {orders.slice(0, 3).map((o) => (
-              <OrderRow key={o.id} order={o} />
-            ))}
-          </ul>
+          {orders.length ? (
+            <ul>
+              {orders.slice(0, 3).map((o) => (
+                <OrderRow key={o.id} order={o} />
+              ))}
+            </ul>
+          ) : (
+            <p className="py-8 text-sm text-slate">No orders yet.</p>
+          )}
         </section>
 
         <section className="lg:col-span-4 lg:col-start-9" aria-label="Notifications">
           <SectionTitle title="Notifications" action={<span className="meta text-gold-deep">{unread} new</span>} />
+          {!notifications.length && <p className="py-8 text-sm text-slate">No notifications yet.</p>}
           <ul>
-            {notifications.slice(0, 4).map((n) => (
+            {notifications.map((n) => (
               <li key={n.id} className="grid grid-cols-[0.75rem_1fr] gap-3 border-b border-obsidian/10 py-5">
                 <span className={cn('mt-1.5 size-1.5 rounded-full', n.read ? 'bg-obsidian/15' : 'bg-gold')} aria-hidden />
                 <div>
@@ -73,7 +79,6 @@ export default function AccountOverview() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-xs text-slate">Email delivery of notifications begins once the email provider is connected.</p>
         </section>
       </div>
 
@@ -82,16 +87,14 @@ export default function AccountOverview() {
         {open.length ? (
           <ul className="grid md:grid-cols-2">
             {open.map((c, i) => {
-              const p = getProduct(c.productSlug)
               return (
                 <li key={c.id} className={cn('flex items-center gap-5 border-b border-obsidian/10 py-6', i % 2 ? 'md:pl-8' : 'md:border-r md:pr-8')}>
-                  <span className="relative h-16 w-13 shrink-0 overflow-hidden bg-pearl">{p && <Image src={p.images[0].src} alt="" fill sizes="52px" className="object-cover" />}</span>
                   <div className="min-w-0 flex-1">
                     <p className="meta text-slate">
                       {c.id} · {titleCase(c.type)}
                     </p>
-                    <p className="mt-1 truncate text-sm text-obsidian">{p?.name}</p>
-                    <p className="text-xs text-slate">{c.reason}</p>
+                    <p className="mt-1 truncate text-sm text-obsidian">{c.lines.map((l) => l.name).join(', ') || c.subject}</p>
+                    <p className="text-xs text-slate">{c.reason || c.subject}</p>
                   </div>
                   <Status value={c.status} />
                 </li>
@@ -105,12 +108,13 @@ export default function AccountOverview() {
 
       <section aria-label="Saved products">
         <SectionTitle title="Saved for later" action={<TextLink href="/account/saved">All saved</TextLink>} />
+        {!saved.length && <p className="py-8 text-sm text-slate">Nothing saved yet.</p>}
         <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-10 md:grid-cols-4">
-          {saved.map((p) => (
+          {saved.slice(0, 4).map((p) => (
             <li key={p.slug}>
               <Link href={`/products/${p.slug}`} className="group block">
                 <span className="relative block aspect-[4/5] overflow-hidden bg-pearl">
-                  <Image src={p.images[0].src} alt={p.images[0].alt} fill sizes="(min-width: 768px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
+                  <SafeImage src={p.images[0]?.src ?? ''} alt={p.images[0]?.alt ?? p.name} fill sizes="(min-width: 768px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
                 </span>
                 <span className="mt-3 block text-sm text-obsidian group-hover:text-gold-deep">{p.name}</span>
                 <span className="text-xs tabular-nums text-slate">{money(p.seasonalPrice ?? p.price)}</span>

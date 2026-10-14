@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowUpRight, ShieldCheck } from 'lucide-react'
-import { categories } from '@/lib/data/categories'
-import { productsIn } from '@/lib/data/products'
+import { listCategories } from '@/lib/server/services/catalog'
 import { pad } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { ImageReveal, Reveal } from '@/components/motion/primitives'
-import { DemoNote, PageBand } from '@/components/site/ui'
+import { PageBand } from '@/components/site/ui'
 
 export const metadata: Metadata = {
   title: 'Departments',
@@ -26,7 +25,10 @@ const LAYOUT = [
   { tile: 'lg:col-span-10 lg:col-start-2', img: 'aspect-[16/9] lg:aspect-[21/9]' },
 ]
 
-export default function CategoriesPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function CategoriesPage() {
+  const categories = await listCategories()
   return (
     <>
       <PageBand eyebrow="Departments" title={'Eight departments.\nOne selection.'} italic={['selection.']} crumbs={[{ href: '/categories', label: 'Categories' }]}>
@@ -40,12 +42,12 @@ export default function CategoriesPage() {
           <ul className="grid gap-x-8 gap-y-20 md:grid-cols-2 lg:grid-cols-12 lg:gap-y-28">
             {categories.map((c, i) => {
               const l = LAYOUT[i % LAYOUT.length]
-              const count = productsIn(c.slug).length
+              const count = c.count ?? 0
               return (
                 <li key={c.slug} className={cn(l.tile, i === 4 || i === 7 ? 'md:col-span-2' : '')}>
                   <Link href={`/categories/${c.slug}`} className="group block" data-cursor="Enter">
                     <ImageReveal
-                      src={c.image}
+                      src={c.image || '/placeholder.svg'}
                       alt={c.imageAlt}
                       direction={i % 2 ? 'up' : 'left'}
                       parallax={6}
@@ -88,7 +90,7 @@ export default function CategoriesPage() {
               )
             })}
           </ul>
-          <DemoNote className="mt-24">Product counts reflect the demonstration catalog</DemoNote>
+          {!categories.length && <p className="text-sm text-slate">Departments are being prepared. Please check back soon.</p>}
         </div>
       </section>
     </>

@@ -6,8 +6,7 @@ import { Reveal, Stagger, StaggerItem } from '@/components/motion/primitives'
 import { ButtonLink, Eyebrow, SectionHeading, TextLink } from '@/components/site/ui'
 import { ProductCard } from '@/components/commerce/product-card'
 import { DISCOUNT_NOTE, PlanCards } from '@/components/templates/blocks'
-import { categories } from '@/lib/data/categories'
-import { featuredProducts, productsIn } from '@/lib/data/products'
+import { featuredProducts, listCategories } from '@/lib/server/services/catalog'
 
 export const metadata: Metadata = { title: 'Template A · Value Market' }
 
@@ -17,7 +16,11 @@ const STEPS = [
   { icon: PackageSearch, title: 'Ask us to find it', text: 'Member Plus: send any product you try to buy and we will find the same or similar at 25% less.' },
 ]
 
-export default function ValueTemplate() {
+export const dynamic = 'force-dynamic'
+
+export default async function ValueTemplate() {
+  // Design preview built on the public catalog (published listings only); empty sections hide gracefully.
+  const [categories, featured] = await Promise.all([listCategories().catch(() => []), featuredProducts().catch(() => [])])
   return (
     <>
       {/* Hero: offer on the left, departments on the right */}
@@ -47,7 +50,7 @@ export default function ValueTemplate() {
             {categories.slice(0, 4).map((c) => (
               <StaggerItem key={c.slug}>
                 <Link href={`/categories/${c.slug}`} className="group relative block aspect-[4/3] overflow-hidden">
-                  <Image src={c.image} alt={c.imageAlt} fill sizes="(min-width:1024px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
+                  <Image src={c.image || '/placeholder.svg'} alt={c.imageAlt} fill sizes="(min-width:1024px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
                   <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-ivory/85 via-ivory/10 to-transparent" />
                   <span className="absolute inset-x-4 bottom-4 text-obsidian flex items-end justify-between gap-2">
                     <span className="font-display text-xl font-light leading-none sm:text-2xl md:text-3xl">{c.short}</span>
@@ -85,10 +88,10 @@ export default function ValueTemplate() {
               <StaggerItem key={c.slug}>
                 <Link href={`/categories/${c.slug}`} className="group block">
                   <div className="relative aspect-square overflow-hidden bg-stone">
-                    <Image src={c.image} alt={c.imageAlt} fill sizes="(min-width:1024px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
+                    <Image src={c.image || '/placeholder.svg'} alt={c.imageAlt} fill sizes="(min-width:1024px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
                   </div>
                   <p className="mt-4 font-display text-2xl font-light text-obsidian group-hover:text-gold-deep">{c.name}</p>
-                  <p className="meta mt-1 text-slate">{productsIn(c.slug).length} products</p>
+                  <p className="meta mt-1 text-slate">{(c.count ?? 0)} products</p>
                 </Link>
               </StaggerItem>
             ))}
@@ -104,7 +107,7 @@ export default function ValueTemplate() {
             <TextLink href="/shop">Shop all products</TextLink>
           </div>
           <div className="mt-14 grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-4">
-            {featuredProducts.slice(0, 8).map((p, i) => (
+            {featured.slice(0, 8).map((p, i) => (
               <ProductCard key={p.slug} product={p} index={i} />
             ))}
           </div>

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import { AddressBook } from '@/components/commerce/account-forms'
-import { DEMO_ADDRESSES } from '@/components/commerce/account-data'
 import { SectionTitle } from '@/components/commerce/account-blocks'
+import { requirePage } from '@/lib/server/page-auth'
+import { getAccount } from '@/lib/server/services/customers'
 
 export const metadata: Metadata = {
   title: 'Addresses',
@@ -10,11 +11,12 @@ export const metadata: Metadata = {
   robots: { index: false },
 }
 
-export default function Page() {
+export default async function Page() {
+  const account = await getAccount(await requirePage(['customer'], '/sign-in/customers'))
   return (
     <div className="space-y-10">
       <SectionTitle title="Addresses" />
-      <AddressBook initial={DEMO_ADDRESSES} />
+      <AddressBook initial={account.addresses} />
     </div>
   )
 }

@@ -1,9 +1,8 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { Order } from '@/lib/types'
-import { getProduct } from '@/lib/data/products'
+import { SafeImage } from '@/components/ui/safe-image'
 import { date, money } from '@/lib/format'
 import { Status } from './account-ui'
 
@@ -20,14 +19,11 @@ export function OrderRow({ order: o }: { order: Order }) {
         </span>
         <span className="order-last col-span-2 flex items-center gap-4 md:order-none md:col-span-1">
           <span className="flex -space-x-3">
-            {lines.slice(0, 4).map((l) => {
-              const p = getProduct(l.productSlug)
-              return (
-                <span key={l.productSlug} className="relative h-14 w-11 overflow-hidden border-2 border-obsidian bg-pearl">
-                  {p && <Image src={p.images[0].src} alt="" fill sizes="44px" className="object-cover" />}
-                </span>
-              )
-            })}
+            {lines.slice(0, 4).map((l) => (
+              <span key={l.lineId} className="relative h-14 w-11 overflow-hidden border-2 border-obsidian bg-pearl">
+                <SafeImage src={l.image ?? ''} alt="" fill sizes="44px" className="object-cover" />
+              </span>
+            ))}
           </span>
           <span className="text-xs text-slate">
             {items} item{items === 1 ? '' : 's'} · {o.fulfillments.length} shipment{o.fulfillments.length === 1 ? '' : 's'}

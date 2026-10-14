@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { TrackForm } from '@/components/commerce/account-forms'
-import { DEMO_CUSTOMER_ID, ordersFor } from '@/lib/data/operations'
 
 export const metadata: Metadata = {
   title: 'Track an order',
@@ -10,7 +9,5 @@ export const metadata: Metadata = {
 }
 
 export default function Page() {
-  return (
-    <TrackForm orders={ordersFor(DEMO_CUSTOMER_ID)} />
-  )
+  return <TrackForm signedIn />
 }

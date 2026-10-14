@@ -1,16 +1,14 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
-import { DEMO_CUSTOMER_ID, getOrder, ordersFor } from '@/lib/data/operations'
-import { getProduct } from '@/lib/data/products'
 import { date, money, titleCase } from '@/lib/format'
+import { HttpError } from '@/lib/server/http'
+import { requirePage } from '@/lib/server/page-auth'
+import { myOrder } from '@/lib/server/services/commerce'
 import { OrderTimeline, Status } from '@/components/commerce/account-ui'
 import { Reveal } from '@/components/motion/primitives'
-import { DemoNote } from '@/components/site/ui'
-
-export const generateStaticParams = () => ordersFor(DEMO_CUSTOMER_ID).map((o) => ({ id: o.id }))
+import { SafeImage } from '@/components/ui/safe-image'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -21,9 +19,13 @@ const action = 'meta inline-flex h-11 items-center border border-obsidian/20 px-
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const o = getOrder(id)
-  // Customers only ever see their own orders.
-  if (!o || o.customerId !== DEMO_CUSTOMER_ID) notFound()
+  const actor = await requirePage(['customer'], '/sign-in/customers')
+  // Customers only ever see their own orders (the service scopes by owner).
+  const o = await myOrder(actor, decodeURIComponent(id).toUpperCase()).catch((e) => {
+    if (e instanceof HttpError && e.status === 404) return null
+    throw e
+  })
+  if (!o) notFound()
 
   return (
     <div>
@@ -39,7 +41,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           <p className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
             <Status value={o.status} />
             <span className="text-sm text-slate">
-              {o.fulfillments.length} shipment{o.fulfillments.length === 1 ? '' : 's'} · Payment {titleCase(o.payment).toLowerCase()} (demo)
+              {o.fulfillments.length} shipment{o.fulfillments.length === 1 ? '' : 's'} · Payment {titleCase(o.payment).toLowerCase()}
             </span>
           </p>
         </div>
@@ -65,7 +67,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
         {o.fulfillments.map((f, i) => {
           const canCancel = ['pending', 'confirmed'].includes(f.status)
           const canReturn = f.status === 'delivered'
-          const first = f.lines[0]?.productSlug
+          const first = f.lines[0]?.lineId ?? ''
           return (
             <Reveal as="section" key={f.id} className="grid gap-10 lg:grid-cols-12" blur={false}>
               <div className="lg:col-span-7">
@@ -86,7 +88,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                   </div>
                   <div>
                     <dt className="meta text-slate">{f.status === 'delivered' ? 'Estimated was' : 'Estimated delivery'}</dt>
-                    <dd className="mt-2 text-obsidian">{date(f.estimatedDelivery)}</dd>
+                    <dd className="mt-2 text-obsidian">{f.estimatedDelivery ? date(f.estimatedDelivery) : 'To be confirmed'}</dd>
                   </div>
                   <div>
                     <dt className="meta text-slate">Shipping</dt>
@@ -95,16 +97,18 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                 </dl>
                 <ul>
                   {f.lines.map((l) => {
-                    const p = getProduct(l.productSlug)
                     return (
-                      <li key={l.productSlug} className="flex items-center gap-5 border-b border-obsidian/8 py-5">
-                        <span className="relative h-20 w-16 shrink-0 overflow-hidden bg-pearl">{p && <Image src={p.images[0].src} alt={p.images[0].alt} fill sizes="64px" className="object-cover" />}</span>
+                      <li key={l.lineId} className="flex items-center gap-5 border-b border-obsidian/8 py-5">
+                        <span className="relative h-20 w-16 shrink-0 overflow-hidden bg-pearl">
+                          <SafeImage src={l.image ?? ''} alt="" fill sizes="64px" className="object-cover" />
+                        </span>
                         <div className="min-w-0 flex-1">
                           <Link href={`/products/${l.productSlug}`} className="text-sm text-obsidian hover:text-gold-deep">
                             {l.name}
                           </Link>
                           <p className="mt-1 text-xs text-slate">
                             {l.qty} × {money(l.unitPrice)}
+                            {!!l.returnedQty && ` · ${l.returnedQty} in a return request`}
                           </p>
                         </div>
                         <p className="text-sm tabular-nums text-obsidian">{money(l.qty * l.unitPrice)}</p>
@@ -113,16 +117,16 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
                   })}
                 </ul>
                 <div className="mt-6 flex flex-wrap gap-3">
-                  <Link href={`/account/returns?type=support&order=${o.id}&item=${first}`} className={action}>
+                  <Link href={`/account/returns?type=support&order=${o.id}&line=${first}`} className={action}>
                     Request help
                   </Link>
                   {canCancel && (
-                    <Link href={`/account/returns?type=cancellation&order=${o.id}&item=${first}`} className={action}>
+                    <Link href={`/account/returns?type=cancellation&order=${o.id}&line=${first}`} className={action}>
                       Request cancellation
                     </Link>
                   )}
                   {canReturn && (
-                    <Link href={`/account/returns?type=return&order=${o.id}&item=${first}`} className={action}>
+                    <Link href={`/account/returns?type=return&order=${o.id}&line=${first}`} className={action}>
                       Request a return
                     </Link>
                   )}
@@ -146,7 +150,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             [
               ['Product subtotal', money(o.subtotal)],
               ['Shipping', money(o.shipping)],
-              ['Applicable taxes', o.tax ? money(o.tax) : 'Calculated by tax provider (not yet connected)'],
+              ['Applicable taxes', money(o.tax)],
               ['Discounts', o.discount ? `−${money(o.discount)}` : money(0)],
             ] as const
           ).map(([k, v]) => (
@@ -161,7 +165,6 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
           </div>
         </dl>
       </section>
-      <DemoNote className="mt-12">Demonstration order — carrier and tracking values are samples</DemoNote>
     </div>
   )
 }

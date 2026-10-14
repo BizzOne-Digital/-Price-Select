@@ -1,103 +1,84 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { categories } from '@/lib/data/categories'
-import { brands, publishedProducts, STOCK_LABEL } from '@/lib/data/products'
-import type { Product } from '@/lib/types'
+import { useEffect, useRef, useState, useTransition, type ReactNode } from 'react'
+import type { Category, Product } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { CURTAIN, EASE } from '@/components/motion/primitives'
 import { ProductCard } from './product-card'
-import { unitPriceOf } from './cart'
 
 const PRICES = [
-  { id: '0-250', label: 'Under $250', min: 0, max: 250 },
-  { id: '250-1000', label: '$250 – $1,000', min: 250, max: 1000 },
-  { id: '1000-5000', label: '$1,000 – $5,000', min: 1000, max: 5000 },
-  { id: '5000-', label: '$5,000 and above', min: 5000, max: Infinity },
+  { id: '0-250', label: 'Under $250' },
+  { id: '250-1000', label: '$250 – $1,000' },
+  { id: '1000-5000', label: '$1,000 – $5,000' },
+  { id: '5000-', label: '$5,000 and above' },
 ]
 const SORTS = [
   ['featured', 'Featured'],
+  ['newest', 'Newest'],
   ['price-asc', 'Price, low to high'],
   ['price-desc', 'Price, high to low'],
   ['name', 'Name, A – Z'],
 ] as const
-const STOCKS = ['in_stock', 'low_stock', 'made_to_order'] as const
 
 const list = (v: string | null) => (v ? v.split(',').filter(Boolean) : [])
 
-type Filters = { q: string; category: string[]; brand: string[]; price: string; stock: string[]; seasonal: boolean; sort: string }
+export type ShopResult = { items: Product[]; total: number; page: number; pageSize: number; brands: string[] }
 
-function matches(p: Product, f: Filters, skip?: keyof Filters) {
-  const term = f.q.trim().toLowerCase()
-  const price = unitPriceOf(p)
-  const band = PRICES.find((b) => b.id === f.price)
-  return (
-    (!term || [p.name, p.brand, p.summary, p.category, p.sku].join(' ').toLowerCase().includes(term)) &&
-    (skip === 'category' || !f.category.length || f.category.includes(p.category)) &&
-    (skip === 'brand' || !f.brand.length || f.brand.includes(p.brand)) &&
-    (skip === 'price' || !band || (price >= band.min && price < band.max)) &&
-    (skip === 'stock' || !f.stock.length || f.stock.includes(p.stock)) &&
-    (skip === 'seasonal' || !f.seasonal || !!p.seasonal)
-  )
-}
-
-/** Catalog with URL-synced filters. The URL is the source of truth so results are shareable. */
-export function ShopCatalog() {
+/**
+ * Catalog with URL-synced filters. The URL is the source of truth (shareable); results are
+ * server-rendered by the page from the catalog service on every navigation.
+ */
+export function ShopCatalog({ result, categories }: { result: ShopResult; categories: Category[] }) {
   const sp = useSearchParams()
-  const f: Filters = {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [pending, start] = useTransition()
+  const f = {
     q: sp.get('q') ?? '',
-    category: list(sp.get('category')),
+    category: sp.get('category') ?? '',
     brand: list(sp.get('brand')),
     price: sp.get('price') ?? '',
-    stock: list(sp.get('stock')),
+    inStock: sp.get('availability') === 'in_stock',
     seasonal: sp.get('seasonal') === '1',
     sort: sp.get('sort') ?? 'featured',
   }
   const [q, setQ] = useState(f.q)
   const [drawer, setDrawer] = useState(false)
+  const typing = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   // Header search can change ?q= while we're mounted.
   useEffect(() => setQ(sp.get('q') ?? ''), [sp])
 
+  const go = (n: URLSearchParams) => {
+    const s = n.toString()
+    start(() => router.replace(`${pathname}${s ? `?${s}` : ''}`, { scroll: false }))
+  }
   const write = (patch: Record<string, string | null>) => {
     const n = new URLSearchParams(sp.toString())
     for (const [k, v] of Object.entries(patch)) (v ? n.set(k, v) : n.delete(k))
-    const s = n.toString()
-    window.history.replaceState(null, '', `/shop${s ? `?${s}` : ''}`)
+    if (!('page' in patch)) n.delete('page')
+    go(n)
   }
-  const toggle = (k: 'category' | 'brand' | 'stock', v: string) => {
-    const cur = f[k]
-    write({ [k]: (cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v]).join(',') || null })
-  }
+  const toggleBrand = (v: string) => write({ brand: (f.brand.includes(v) ? f.brand.filter((x) => x !== v) : [...f.brand, v]).join(',') || null })
 
-  const results = useMemo(() => {
-    const r = publishedProducts.filter((p) => matches(p, f))
-    if (f.sort === 'price-asc') r.sort((a, b) => unitPriceOf(a) - unitPriceOf(b))
-    else if (f.sort === 'price-desc') r.sort((a, b) => unitPriceOf(b) - unitPriceOf(a))
-    else if (f.sort === 'name') r.sort((a, b) => a.name.localeCompare(b.name))
-    else r.sort((a, b) => Number(!!b.featured) - Number(!!a.featured))
-    return r
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sp])
-
-  // Facet counts respect every other active filter.
-  const count = (k: keyof Filters, test: (p: Product) => boolean) => publishedProducts.filter((p) => matches(p, f, k) && test(p)).length
+  const results = result.items
+  const pages = Math.max(1, Math.ceil(result.total / result.pageSize))
 
   const chips: { label: string; clear: () => void }[] = [
     ...(f.q ? [{ label: `“${f.q}”`, clear: () => write({ q: null }) }] : []),
-    ...f.category.map((c) => ({ label: categories.find((x) => x.slug === c)?.short ?? c, clear: () => toggle('category', c) })),
-    ...f.brand.map((b) => ({ label: b, clear: () => toggle('brand', b) })),
+    ...(f.category ? [{ label: categories.find((x) => x.slug === f.category)?.short ?? f.category, clear: () => write({ category: null }) }] : []),
+    ...f.brand.map((b) => ({ label: b, clear: () => toggleBrand(b) })),
     ...(f.price ? [{ label: PRICES.find((p) => p.id === f.price)?.label ?? f.price, clear: () => write({ price: null }) }] : []),
-    ...f.stock.map((s) => ({ label: STOCK_LABEL[s as Product['stock']] ?? s, clear: () => toggle('stock', s) })),
+    ...(f.inStock ? [{ label: 'Available now', clear: () => write({ availability: null }) }] : []),
     ...(f.seasonal ? [{ label: 'Seasonal selection', clear: () => write({ seasonal: null }) }] : []),
   ]
   const clearAll = () => {
     setQ('')
-    window.history.replaceState(null, '', f.sort !== 'featured' ? `/shop?sort=${f.sort}` : '/shop')
+    go(new URLSearchParams(f.sort !== 'featured' ? { sort: f.sort } : {}))
   }
 
   const body = (
@@ -106,6 +87,7 @@ export function ShopCatalog() {
         role="search"
         onSubmit={(e) => {
           e.preventDefault()
+          clearTimeout(typing.current)
           write({ q: q.trim() || null })
         }}
         className="pb-8"
@@ -119,8 +101,10 @@ export function ShopCatalog() {
             type="search"
             value={q}
             onChange={(e) => {
-              setQ(e.target.value)
-              write({ q: e.target.value.trim() || null })
+              const v = e.target.value
+              setQ(v)
+              clearTimeout(typing.current)
+              typing.current = setTimeout(() => write({ q: v.trim() || null }), 400)
             }}
             placeholder="Products, brands, SKU"
             autoComplete="off"
@@ -132,7 +116,7 @@ export function ShopCatalog() {
 
       <Group legend="Department">
         {categories.map((c) => (
-          <Check key={c.slug} checked={f.category.includes(c.slug)} onChange={() => toggle('category', c.slug)} count={count('category', (p) => p.category === c.slug)}>
+          <Check key={c.slug} radio checked={f.category === c.slug} onChange={() => write({ category: f.category === c.slug ? null : c.slug })} count={c.count}>
             {c.name}
           </Check>
         ))}
@@ -140,35 +124,33 @@ export function ShopCatalog() {
 
       <Group legend="Price" note="Excludes taxes and shipping">
         {PRICES.map((b) => (
-          <Check key={b.id} radio checked={f.price === b.id} onChange={() => write({ price: f.price === b.id ? null : b.id })} count={count('price', (p) => unitPriceOf(p) >= b.min && unitPriceOf(p) < b.max)}>
+          <Check key={b.id} radio checked={f.price === b.id} onChange={() => write({ price: f.price === b.id ? null : b.id })}>
             {b.label}
           </Check>
         ))}
       </Group>
 
       <Group legend="Availability">
-        {STOCKS.map((s) => (
-          <Check key={s} checked={f.stock.includes(s)} onChange={() => toggle('stock', s)} count={count('stock', (p) => p.stock === s)}>
-            {STOCK_LABEL[s]}
-          </Check>
-        ))}
+        <Check checked={f.inStock} onChange={() => write({ availability: f.inStock ? null : 'in_stock' })}>
+          Available now or made to order
+        </Check>
       </Group>
 
       <Group legend="Seasonal">
-        <Check checked={f.seasonal} onChange={() => write({ seasonal: f.seasonal ? null : '1' })} count={count('seasonal', (p) => !!p.seasonal)}>
+        <Check checked={f.seasonal} onChange={() => write({ seasonal: f.seasonal ? null : '1' })}>
           Seasonal selection
         </Check>
       </Group>
 
-      <Group legend="Brand">
-        {brands
-          .filter((b) => publishedProducts.some((p) => p.brand === b))
-          .map((b) => (
-            <Check key={b} checked={f.brand.includes(b)} onChange={() => toggle('brand', b)} count={count('brand', (p) => p.brand === b)}>
+      {result.brands.length > 0 && (
+        <Group legend="Brand">
+          {result.brands.map((b) => (
+            <Check key={b} checked={f.brand.includes(b)} onChange={() => toggleBrand(b)}>
               {b}
             </Check>
           ))}
-      </Group>
+        </Group>
+      )}
     </div>
   )
 
@@ -187,12 +169,13 @@ export function ShopCatalog() {
           <p className="flex items-baseline gap-3" aria-live="polite">
             <span className="relative inline-flex h-[1.1em] overflow-hidden font-display text-5xl font-light leading-none tabular-nums text-obsidian">
               <AnimatePresence mode="popLayout" initial={false}>
-                <motion.span key={results.length} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }} transition={{ duration: 0.6, ease: EASE }}>
-                  {String(results.length).padStart(2, '0')}
+                <motion.span key={result.total} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }} transition={{ duration: 0.6, ease: EASE }}>
+                  {String(result.total).padStart(2, '0')}
                 </motion.span>
               </AnimatePresence>
             </span>
-            <span className="meta text-slate">{results.length === 1 ? 'Product' : 'Products'}</span>
+            <span className="meta text-slate">{result.total === 1 ? 'Product' : 'Products'}</span>
+            {pending && <span className="meta text-gold-deep">Updating…</span>}
           </p>
           <div className="flex items-center gap-4">
             <button type="button" onClick={() => setDrawer(true)} className="meta flex h-11 items-center gap-3 border border-obsidian/20 px-4 text-obsidian lg:hidden" aria-haspopup="dialog">
@@ -233,7 +216,12 @@ export function ShopCatalog() {
           )}
         </AnimatePresence>
 
-        {results.length === 0 ? (
+        {results.length === 0 && !chips.length ? (
+          <div className="py-24 md:py-32">
+            <p className="eyebrow text-gold-deep">Coming soon</p>
+            <p className="mt-6 max-w-md text-sm leading-relaxed text-slate">The catalog is being prepared. Products appear here as approved suppliers publish them.</p>
+          </div>
+        ) : results.length === 0 ? (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: EASE }} className="py-24 md:py-32">
             <p className="eyebrow text-gold-deep">No match</p>
             <p className="mt-6 max-w-[16ch] font-display text-[clamp(2.4rem,4.4vw,4rem)] font-light leading-[0.98] tracking-[-0.03em] text-obsidian">
@@ -252,7 +240,7 @@ export function ShopCatalog() {
             </div>
           </motion.div>
         ) : (
-          <motion.ul layout className="mt-12 grid grid-cols-2 gap-x-4 gap-y-14 md:gap-x-6 xl:grid-cols-3 xl:gap-x-8 xl:gap-y-20">
+          <motion.ul layout aria-busy={pending} className={cn('mt-12 grid grid-cols-2 gap-x-4 gap-y-14 transition-opacity md:gap-x-6 xl:grid-cols-3 xl:gap-x-8 xl:gap-y-20', pending && 'opacity-60')}>
             <AnimatePresence mode="popLayout" initial={false}>
               {results.map((p, i) => (
                 <motion.li
@@ -269,10 +257,24 @@ export function ShopCatalog() {
             </AnimatePresence>
           </motion.ul>
         )}
+
+        {pages > 1 && (
+          <nav aria-label="Pagination" className="mt-20 flex items-center justify-between border-t border-obsidian/10 pt-6">
+            <button type="button" disabled={result.page <= 1 || pending} onClick={() => write({ page: result.page > 2 ? String(result.page - 1) : null })} className="link-line eyebrow h-11 text-obsidian disabled:pointer-events-none disabled:opacity-30">
+              Previous
+            </button>
+            <p className="meta tabular-nums text-slate">
+              Page {result.page} of {pages}
+            </p>
+            <button type="button" disabled={result.page >= pages || pending} onClick={() => write({ page: String(result.page + 1) })} className="link-line eyebrow h-11 text-obsidian disabled:pointer-events-none disabled:opacity-30">
+              Next
+            </button>
+          </nav>
+        )}
       </div>
 
       {/* Mobile drawer */}
-      <FilterDrawer open={drawer} onClose={() => setDrawer(false)} count={results.length} onClear={clearAll} active={chips.length}>
+      <FilterDrawer open={drawer} onClose={() => setDrawer(false)} count={result.total} onClear={clearAll} active={chips.length}>
         {body}
       </FilterDrawer>
     </div>
@@ -292,7 +294,7 @@ function Group({ legend, note, children }: { legend: string; note?: string; chil
   )
 }
 
-function Check({ checked, onChange, count, radio, children }: { checked: boolean; onChange: () => void; count: number; radio?: boolean; children: ReactNode }) {
+function Check({ checked, onChange, count, radio, children }: { checked: boolean; onChange: () => void; count?: number; radio?: boolean; children: ReactNode }) {
   return (
     <label className={cn('group flex min-h-10 cursor-pointer items-center gap-3 text-sm transition-colors', count === 0 && !checked ? 'text-slate/50' : 'text-obsidian/85 hover:text-obsidian')}>
       <input type="checkbox" checked={checked} onChange={onChange} className="peer sr-only" />
@@ -307,7 +309,7 @@ function Check({ checked, onChange, count, radio, children }: { checked: boolean
         <span className={cn('size-1.5 bg-gold-deep transition-transform duration-300 ease-[var(--ease-luxe)]', radio && 'rounded-full', checked ? 'scale-100' : 'scale-0')} />
       </span>
       <span className="flex-1">{children}</span>
-      <span className="meta tabular-nums text-slate/70">{count}</span>
+      {count != null && <span className="meta tabular-nums text-slate/70">{count}</span>}
     </label>
   )
 }

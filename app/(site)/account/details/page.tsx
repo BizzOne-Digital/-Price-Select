@@ -1,17 +1,18 @@
 import type { Metadata } from 'next'
 import { DetailsForm } from '@/components/commerce/account-forms'
-import { customers, DEMO_CUSTOMER_ID } from '@/lib/data/operations'
+import { requirePage } from '@/lib/server/page-auth'
+import { capabilities } from '@/lib/server/services/capabilities'
+import { getAccount } from '@/lib/server/services/customers'
 
 export const metadata: Metadata = {
   title: 'Account details',
-  description: 'Your personal details and notification preferences.',
+  description: 'Your personal details, password, membership and email preferences.',
   alternates: { canonical: '/account/details' },
   robots: { index: false },
 }
 
-export default function Page() {
-  const me = customers.find((c) => c.id === DEMO_CUSTOMER_ID)!
-  return (
-    <DetailsForm name={me.name} email={me.email} />
-  )
+export default async function Page() {
+  const actor = await requirePage(['customer'], '/sign-in/customers')
+  const [account, caps] = await Promise.all([getAccount(actor), capabilities()])
+  return <DetailsForm account={account} paymentsAvailable={caps.payments} />
 }

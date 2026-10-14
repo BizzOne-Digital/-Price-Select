@@ -1,21 +1,22 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion } from 'motion/react'
 import { FileText, Paperclip, X } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import type { CaseStatus, Order, ReturnCase, ReturnType } from '@/lib/types'
-import { getProduct } from '@/lib/data/products'
+import { api, ApiError, errorText, idempotencyKey } from '@/lib/client/api'
+import { privateAssetUrl, uploadPrivate } from '@/lib/client/upload'
+import type { CaseStatus, MembershipState, MembershipTier, Order, Product, ReturnCase, ReturnType } from '@/lib/types'
+import { MEMBERSHIPS } from '@/lib/site'
 import { date, money, titleCase } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { EASE } from '@/components/motion/primitives'
 import { useToast } from '@/components/ui/toast'
-import { btnClass, BtnInner, DemoNote } from '@/components/site/ui'
+import { SafeImage } from '@/components/ui/safe-image'
+import { btnClass, BtnInner } from '@/components/site/ui'
 import { useCart } from './cart'
 import { OrderTimeline, Status } from './account-ui'
-import type { DemoAddress } from './account-data'
 
 /* ───────── Shared form bits ───────── */
 function Label({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
@@ -32,46 +33,71 @@ function Err({ id, msg }: { id: string; msg?: string }) {
     </p>
   ) : null
 }
-const submitCls = btnClass('dark', 'sm:min-w-56')
+function FormError({ msg }: { msg?: string }) {
+  return msg ? (
+    <p role="alert" className="border-l border-danger pl-4 text-sm text-danger">
+      {msg}
+    </p>
+  ) : null
+}
+const submitCls = btnClass('dark', 'sm:min-w-56 disabled:cursor-not-allowed disabled:opacity-50')
+const safeDate = (iso?: string) => (iso ? date(iso) : 'To be confirmed')
 
 /* ───────── Track ───────── */
-export function TrackForm({ orders }: { orders: Order[] }) {
+/** Signed-in customers track their own orders by number; guests also need the access code from checkout. */
+export function TrackForm({ signedIn }: { signedIn: boolean }) {
   const [id, setId] = useState('')
-  const [email, setEmail] = useState('')
-  const [errors, setErrors] = useState<{ id?: string; email?: string }>({})
+  const [code, setCode] = useState('')
+  const [errors, setErrors] = useState<{ id?: string; code?: string }>({})
   const [result, setResult] = useState<Order | null | undefined>(undefined)
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState('')
 
   return (
     <div className="grid gap-14 lg:grid-cols-12">
       <form
         noValidate
         className="lg:col-span-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault()
           const er: typeof errors = {}
-          if (!/^PS-\d{6}$/i.test(id.trim())) er.id = 'Enter an order number like PS-240118.'
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) er.email = 'Enter the email used for the order.'
+          if (!/^PS-\d{4,}$/i.test(id.trim())) er.id = 'Enter an order number like PS-240201.'
+          if (!signedIn && code.trim().length < 10) er.code = 'Enter the access code shown when you placed the order.'
           setErrors(er)
           if (Object.keys(er).length) return
-          setResult(orders.find((o) => o.id.toLowerCase() === id.trim().toLowerCase()) ?? null)
+          setBusy(true)
+          setFailure('')
+          try {
+            setResult(await api<Order>('/api/orders/track', { body: { orderId: id.trim().toUpperCase(), accessCode: code.trim() || undefined } }))
+          } catch (err) {
+            if (err instanceof ApiError && err.status === 404) setResult(null)
+            else {
+              setResult(undefined)
+              setFailure(errorText(err))
+            }
+          } finally {
+            setBusy(false)
+          }
         }}
       >
         <h2 className="font-display text-4xl font-light text-obsidian">Find an order</h2>
-        <p className="mt-3 text-sm leading-relaxed text-slate">Enter your order number and the email used at checkout.</p>
+        <p className="mt-3 text-sm leading-relaxed text-slate">
+          {signedIn ? 'Enter the order number from your confirmation.' : 'Enter your order number and the order access code shown when you checked out.'}
+        </p>
         <div className="mt-8">
           <Label htmlFor="tr-id">Order number</Label>
-          <input id="tr-id" value={id} onChange={(e) => setId(e.target.value)} className="field uppercase" placeholder="PS-000000" autoComplete="off" aria-invalid={!!errors.id || undefined} aria-describedby={errors.id ? 'tr-id-err' : 'tr-id-hint'} />
-          {errors.id ? <Err id="tr-id-err" msg={errors.id} /> : <p id="tr-id-hint" className="mt-1.5 text-xs text-slate/80">Demo: try PS-240118 or PS-240131.</p>}
+          <input id="tr-id" value={id} onChange={(e) => setId(e.target.value)} className="field uppercase" placeholder="PS-000000" autoComplete="off" aria-invalid={!!errors.id || undefined} aria-describedby={errors.id ? 'tr-id-err' : undefined} />
+          <Err id="tr-id-err" msg={errors.id} />
         </div>
         <div className="mt-6">
-          <Label htmlFor="tr-email">Email</Label>
-          <input id="tr-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="field" autoComplete="email" aria-invalid={!!errors.email || undefined} aria-describedby={errors.email ? 'tr-email-err' : undefined} />
-          <Err id="tr-email-err" msg={errors.email} />
+          <Label htmlFor="tr-code">Order access code{signedIn && ' (guest orders only)'}</Label>
+          <input id="tr-code" value={code} onChange={(e) => setCode(e.target.value)} className="field" autoComplete="off" spellCheck={false} aria-invalid={!!errors.code || undefined} aria-describedby={errors.code ? 'tr-code-err' : undefined} />
+          <Err id="tr-code-err" msg={errors.code} />
         </div>
-        <button type="submit" className={cn(submitCls, 'mt-10 w-full')}>
-          <BtnInner variant="dark">Track order</BtnInner>
+        <button type="submit" disabled={busy} className={cn(submitCls, 'mt-10 w-full')}>
+          <BtnInner variant="dark">{busy ? 'Looking up…' : 'Track order'}</BtnInner>
         </button>
-        <DemoNote className="mt-6">Demo lookup — email is verified once accounts are connected</DemoNote>
+        {failure && <p role="alert" className="mt-4 text-sm text-danger">{failure}</p>}
       </form>
 
       <div className="lg:col-span-7 lg:col-start-6" aria-live="polite">
@@ -84,14 +110,14 @@ export function TrackForm({ orders }: { orders: Order[] }) {
           {result === null && (
             <motion.div key="none" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="border-l border-danger pl-5">
               <p className="font-display text-3xl font-light text-obsidian">We couldn’t find that order.</p>
-              <p className="mt-2 text-sm text-slate">Check the number in your confirmation email, or contact support.</p>
+              <p className="mt-2 text-sm text-slate">Check the order number and access code from your confirmation, or contact support.</p>
             </motion.div>
           )}
           {result && (
             <motion.div key={result.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.6, ease: EASE }}>
               <div className="flex flex-wrap items-end justify-between gap-4 border-b border-obsidian/15 pb-5">
                 <div>
-                  <p className="meta text-slate">Placed {date(result.placedAt)}</p>
+                  <p className="meta text-slate">Placed {safeDate(result.placedAt)}</p>
                   <p className="mt-2 font-display text-4xl font-light text-obsidian">{result.id}</p>
                 </div>
                 <Status value={result.status} />
@@ -105,7 +131,7 @@ export function TrackForm({ orders }: { orders: Order[] }) {
                       </p>
                       <ul className="mt-3 space-y-1 text-sm text-obsidian">
                         {f.lines.map((l) => (
-                          <li key={l.productSlug}>
+                          <li key={l.lineId}>
                             {l.name} <span className="text-slate">× {l.qty}</span>
                           </li>
                         ))}
@@ -116,8 +142,12 @@ export function TrackForm({ orders }: { orders: Order[] }) {
                           <dd className="mt-1 text-obsidian">{f.carrier ?? 'Assigned at dispatch'}</dd>
                         </div>
                         <div>
+                          <dt className="meta text-slate">Tracking</dt>
+                          <dd className="mt-1 break-all text-obsidian">{f.tracking ?? 'Added once shipped'}</dd>
+                        </div>
+                        <div>
                           <dt className="meta text-slate">Estimated</dt>
-                          <dd className="mt-1 text-obsidian">{date(f.estimatedDelivery)}</dd>
+                          <dd className="mt-1 text-obsidian">{safeDate(f.estimatedDelivery)}</dd>
                         </div>
                       </dl>
                     </div>
@@ -125,9 +155,11 @@ export function TrackForm({ orders }: { orders: Order[] }) {
                   </section>
                 ))}
               </div>
-              <Link href={`/account/orders/${result.id}`} className="link-line link-line--static eyebrow mt-10 text-obsidian">
-                Full order details
-              </Link>
+              {signedIn && result.customerId !== 'guest' && (
+                <Link href={`/account/orders/${result.id}`} className="link-line link-line--static eyebrow mt-10 text-obsidian">
+                  Full order details
+                </Link>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -164,20 +196,23 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
   const [cases, setCases] = useState(initial)
   const [type, setType] = useState<ReturnType>((TYPES.find((t) => t.id === sp.get('type'))?.id ?? 'return') as ReturnType)
   const [orderId, setOrderId] = useState(orders.some((o) => o.id === sp.get('order')) ? sp.get('order')! : '')
-  const [item, setItem] = useState(sp.get('item') ?? '')
+  const [qty, setQty] = useState<Record<string, number>>(() => (sp.get('line') ? { [sp.get('line')!]: 1 } : {}))
   const [reason, setReason] = useState('')
   const [desc, setDesc] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState('')
   const [submitted, setSubmitted] = useState<ReturnCase | null>(null)
 
   const order = orders.find((o) => o.id === orderId)
-  const items = order?.fulfillments.flatMap((f) => f.lines.map((l) => ({ ...l, supplierId: f.supplierId }))) ?? []
+  const lines = (order?.fulfillments.flatMap((f) => f.lines) ?? []).map((l) => ({ ...l, left: Math.max(0, l.qty - (l.returnedQty ?? 0)) }))
+  const chosen = lines.filter((l) => (qty[l.lineId] ?? 0) > 0)
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {}
-    if (!order) e.order = 'Choose the order this concerns.'
-    if (type !== 'support' && !items.some((i) => i.productSlug === item)) e.item = 'Choose the item.'
+    if (type !== 'support' && !order) e.order = 'Choose the order this concerns.'
+    if (type !== 'support' && !chosen.length) e.lines = 'Choose at least one item and quantity.'
     if (!reason) e.reason = 'Choose a reason.'
     if (desc.trim().length < 10) e.desc = 'Add a short description (at least 10 characters).'
     setErrors(e)
@@ -186,25 +221,29 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
       document.getElementById(`rc-${k}`)?.focus()
       return
     }
-    const line = items.find((i) => i.productSlug === item) ?? items[0]
-    const c: ReturnCase = {
-      id: `RC-${Math.floor(4000 + Math.random() * 5000)}`,
-      orderId: order!.id,
-      customerId: order!.customerId,
-      supplierId: line.supplierId,
-      productSlug: line.productSlug,
-      type,
-      reason,
-      status: 'open',
-      openedAt: new Date().toISOString(),
-      notes: [{ by: 'You', role: 'customer', at: new Date().toISOString(), text: desc.trim() }],
+    setBusy(true)
+    setFailure('')
+    try {
+      // Evidence is uploaded privately first; only the asset ids are attached to the case.
+      const attachments: string[] = []
+      for (const f of files) attachments.push((await uploadPrivate(f, 'case_evidence', f.name)).id)
+      const body =
+        type === 'support'
+          ? { kind: 'support', orderId: order?.id, subject: reason, message: desc.trim(), attachments }
+          : { kind: 'return', orderId: order!.id, type, lines: chosen.map((l) => ({ lineId: l.lineId, qty: qty[l.lineId] })), reason, message: desc.trim(), attachments }
+      const c = await api<ReturnCase>('/api/cases', { body })
+      setCases((s) => [c, ...s])
+      setSubmitted(c)
+      setReason('')
+      setDesc('')
+      setFiles([])
+      setQty({})
+      toast({ title: `Case ${c.id} submitted`, body: 'Price-Select support has your request.' })
+    } catch (err) {
+      setFailure(errorText(err))
+    } finally {
+      setBusy(false)
     }
-    setCases((s) => [c, ...s])
-    setSubmitted(c)
-    setReason('')
-    setDesc('')
-    setFiles([])
-    toast({ title: `Case ${c.id} submitted`, body: 'Demo only — saved in this browser session, not sent to support.' })
   }
 
   return (
@@ -216,32 +255,13 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
         {cases.length ? (
           <ul className="mt-8 border-t border-obsidian/15">
             <AnimatePresence initial={false}>
-              {cases.map((c) => {
-                const p = getProduct(c.productSlug)
-                return (
-                  <motion.li key={c.id} layout initial={{ opacity: 0, backgroundColor: 'rgb(214 195 154 / 0.35)' }} animate={{ opacity: 1, backgroundColor: 'rgb(214 195 154 / 0)' }} transition={{ duration: 1.6, ease: EASE }} className="grid gap-4 border-b border-obsidian/10 py-6 sm:grid-cols-[4rem_1fr_auto] sm:items-center">
-                    <span className="relative hidden aspect-[4/5] overflow-hidden bg-pearl sm:block">{p && <Image src={p.images[0].src} alt="" fill sizes="64px" className="object-cover" />}</span>
-                    <div>
-                      <p className="meta text-slate">
-                        {c.id} · {titleCase(c.type)} · Order{' '}
-                        <Link href={`/account/orders/${c.orderId}`} className="text-gold-deep hover:underline">
-                          {c.orderId}
-                        </Link>
-                      </p>
-                      <p className="mt-1.5 text-base text-obsidian">{p?.name ?? c.productSlug}</p>
-                      <p className="mt-1 text-xs text-slate">
-                        {c.reason} · Opened {date(c.openedAt)}
-                        {c.resolution && ` · ${c.resolution}`}
-                      </p>
-                    </div>
-                    <Status value={c.status} />
-                  </motion.li>
-                )
-              })}
+              {cases.map((c) => (
+                <CaseRow key={c.id} c={c} onChange={(n) => setCases((s) => s.map((x) => (x.id === n.id ? n : x)))} />
+              ))}
             </AnimatePresence>
           </ul>
         ) : (
-          <p className="mt-6 text-sm text-slate">No open cases.</p>
+          <p className="mt-6 text-sm text-slate">No cases yet.</p>
         )}
       </section>
 
@@ -272,7 +292,6 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
                     </li>
                   ))}
                 </ol>
-                <DemoNote className="mt-6">Demo — not sent to support</DemoNote>
               </motion.div>
             )}
           </AnimatePresence>
@@ -282,7 +301,7 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
           noValidate
           onSubmit={(e) => {
             e.preventDefault()
-            submit()
+            void submit()
           }}
           className="space-y-8 lg:col-span-7 lg:col-start-6"
         >
@@ -310,47 +329,63 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
             </div>
           </fieldset>
 
-          <div className="grid gap-8 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="rc-order">Order</Label>
-              <select
-                id="rc-order"
-                value={orderId}
-                onChange={(e) => {
-                  setOrderId(e.target.value)
-                  setItem('')
-                }}
-                className="field"
-                aria-invalid={!!errors.order || undefined}
-                aria-describedby={errors.order ? 'rc-order-err' : undefined}
-              >
-                <option value="">Select an order</option>
-                {orders.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.id} · {date(o.placedAt)}
-                  </option>
-                ))}
-              </select>
-              <Err id="rc-order-err" msg={errors.order} />
-            </div>
-            <div>
-              <Label htmlFor="rc-item">Item{type === 'support' && ' (optional)'}</Label>
-              <select id="rc-item" value={item} onChange={(e) => setItem(e.target.value)} className="field" disabled={!order} aria-invalid={!!errors.item || undefined} aria-describedby={errors.item ? 'rc-item-err' : undefined}>
-                <option value="">{order ? 'Select an item' : 'Choose an order first'}</option>
-                {items.map((l) => (
-                  <option key={l.productSlug} value={l.productSlug}>
-                    {l.name} × {l.qty}
-                  </option>
-                ))}
-              </select>
-              <Err id="rc-item-err" msg={errors.item} />
-            </div>
+          <div>
+            <Label htmlFor="rc-order">Order{type === 'support' && ' (optional)'}</Label>
+            <select
+              id="rc-order"
+              value={orderId}
+              onChange={(e) => {
+                setOrderId(e.target.value)
+                setQty({})
+              }}
+              className="field"
+              aria-invalid={!!errors.order || undefined}
+              aria-describedby={errors.order ? 'rc-order-err' : undefined}
+            >
+              <option value="">{orders.length ? 'Select an order' : 'No orders yet'}</option>
+              {orders.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.id} · {safeDate(o.placedAt)}
+                </option>
+              ))}
+            </select>
+            <Err id="rc-order-err" msg={errors.order} />
           </div>
 
+          {type !== 'support' && order && (
+            <fieldset id="rc-lines" tabIndex={-1} aria-describedby={errors.lines ? 'rc-lines-err' : undefined}>
+              <legend className="meta text-slate">Items and quantities</legend>
+              <ul className="mt-3">
+                {lines.map((l) => (
+                  <li key={l.lineId} className="flex items-center justify-between gap-4 border-b border-obsidian/8 py-3 text-sm">
+                    <span className="min-w-0">
+                      <span className="block text-obsidian">{l.name}</span>
+                      <span className="text-xs text-slate">{l.left ? `${l.left} of ${l.qty} available to request` : 'Already covered by a request'}</span>
+                    </span>
+                    <select
+                      aria-label={`Quantity of ${l.name}`}
+                      value={qty[l.lineId] ?? 0}
+                      disabled={!l.left}
+                      onChange={(e) => setQty((s) => ({ ...s, [l.lineId]: Number(e.target.value) }))}
+                      className="field w-20 py-2"
+                    >
+                      {Array.from({ length: l.left + 1 }, (_, n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </li>
+                ))}
+              </ul>
+              <Err id="rc-lines-err" msg={errors.lines} />
+            </fieldset>
+          )}
+
           <div>
-            <Label htmlFor="rc-reason">Reason</Label>
+            <Label htmlFor="rc-reason">{type === 'support' ? 'Topic' : 'Reason'}</Label>
             <select id="rc-reason" value={reason} onChange={(e) => setReason(e.target.value)} className="field" aria-invalid={!!errors.reason || undefined} aria-describedby={errors.reason ? 'rc-reason-err' : undefined}>
-              <option value="">Select a reason</option>
+              <option value="">Select {type === 'support' ? 'a topic' : 'a reason'}</option>
               {REASONS[type].map((r) => (
                 <option key={r}>{r}</option>
               ))}
@@ -360,7 +395,7 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
 
           <div>
             <Label htmlFor="rc-desc">Description</Label>
-            <textarea id="rc-desc" rows={4} value={desc} onChange={(e) => setDesc(e.target.value)} className="field resize-y" aria-invalid={!!errors.desc || undefined} aria-describedby={errors.desc ? 'rc-desc-err' : undefined} />
+            <textarea id="rc-desc" rows={4} maxLength={4000} value={desc} onChange={(e) => setDesc(e.target.value)} className="field resize-y" aria-invalid={!!errors.desc || undefined} aria-describedby={errors.desc ? 'rc-desc-err' : undefined} />
             <Err id="rc-desc-err" msg={errors.desc} />
           </div>
 
@@ -371,15 +406,15 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
             <label htmlFor="rc-files" className="mt-3 flex min-h-24 cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-obsidian/20 p-6 text-center transition-colors hover:border-gold-deep focus-within:border-gold">
               <Paperclip className="size-4 text-gold-deep" strokeWidth={1.3} aria-hidden />
               <span className="text-sm text-obsidian">Choose files</span>
-              <span className="text-xs text-slate">Images or PDF. Files stay in your browser in this demo.</span>
+              <span className="text-xs text-slate">PDF, JPEG, PNG or WebP, up to 10 MB each. Shared privately with support.</span>
               <input
                 id="rc-files"
                 type="file"
                 multiple
-                accept="image/*,application/pdf"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
                 aria-labelledby="rc-files-label"
                 className="sr-only"
-                onChange={(e) => setFiles((s) => [...s, ...Array.from(e.target.files ?? [])].slice(0, 6))}
+                onChange={(e) => setFiles((s) => [...s, ...Array.from(e.target.files ?? [])].slice(0, 8))}
               />
             </label>
             {files.length > 0 && (
@@ -400,10 +435,10 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
             )}
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-obsidian/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
-            <DemoNote>Demo — requests are kept in this browser session</DemoNote>
-            <button type="submit" className={submitCls}>
-              <BtnInner variant="dark">Submit request</BtnInner>
+          <FormError msg={failure} />
+          <div className="flex justify-end border-t border-obsidian/10 pt-8">
+            <button type="submit" disabled={busy} className={submitCls}>
+              <BtnInner variant="dark">{busy ? 'Submitting…' : 'Submit request'}</BtnInner>
             </button>
           </div>
         </form>
@@ -412,12 +447,122 @@ export function ReturnsCenter({ cases: initial, orders }: { cases: ReturnCase[];
   )
 }
 
+/** One case: summary row that expands into the message thread with a reply box. */
+function CaseRow({ c, onChange }: { c: ReturnCase; onChange: (c: ReturnCase) => void }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState('')
+  const closed = c.status === 'resolved' || c.status === 'declined'
+  const reply = async () => {
+    if (!text.trim()) return
+    setBusy(true)
+    setFailure('')
+    try {
+      onChange(await api<ReturnCase>(`/api/cases/${encodeURIComponent(c.id)}`, { body: { text: text.trim(), attachments: [] } }))
+      setText('')
+    } catch (e) {
+      setFailure(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <motion.li layout initial={{ opacity: 0, backgroundColor: 'rgb(214 195 154 / 0.35)' }} animate={{ opacity: 1, backgroundColor: 'rgb(214 195 154 / 0)' }} transition={{ duration: 1.6, ease: EASE }} className="border-b border-obsidian/10 py-6">
+      <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-center">
+        <div>
+          <p className="meta text-slate">
+            {c.id} · {titleCase(c.type)}
+            {c.orderId && (
+              <>
+                {' '}
+                · Order{' '}
+                <Link href={`/account/orders/${c.orderId}`} className="text-gold-deep hover:underline">
+                  {c.orderId}
+                </Link>
+              </>
+            )}
+          </p>
+          <p className="mt-1.5 text-base text-obsidian">{c.lines.length ? c.lines.map((l) => `${l.name} × ${l.qty}`).join(', ') : c.subject}</p>
+          <p className="mt-1 text-xs text-slate">
+            {c.reason || c.subject} · Opened {safeDate(c.openedAt)}
+            {c.resolution && ` · ${c.resolution}`}
+            {c.refund && c.refund.status !== 'not_applicable' && ` · Refund ${money(c.refund.amount)} ${c.refund.status === 'succeeded' ? 'issued' : c.refund.status}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-6">
+          <Status value={c.status} />
+          <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="meta h-11 text-gold-deep hover:underline">
+            {open ? 'Hide' : 'Messages'} ({c.notes.length})
+          </button>
+        </div>
+      </div>
+      {open && (
+        <div className="mt-6 space-y-4 border-l border-gold/40 pl-5">
+          {c.notes.map((m, i) => (
+            <div key={i} className="text-sm">
+              <p className="meta text-slate">
+                {m.role === 'customer' ? 'You' : m.role === 'system' ? 'Price-Select' : m.by || 'Price-Select support'} · {safeDate(m.at)}
+              </p>
+              <p className="mt-1 whitespace-pre-line text-obsidian">{m.text}</p>
+              {m.attachments.length > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-3">
+                  {m.attachments.map((a) => (
+                    <li key={a.id}>
+                      <a href={privateAssetUrl(a.id)} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 text-xs text-gold-deep hover:underline">
+                        <FileText className="size-3" aria-hidden />
+                        {a.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+          {closed ? (
+            <p className="text-xs text-slate">This case is closed. Open a new request if you need more help.</p>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                void reply()
+              }}
+              className="space-y-3"
+            >
+              <label htmlFor={`reply-${c.id}`} className="meta text-slate">
+                Reply
+              </label>
+              <textarea id={`reply-${c.id}`} rows={3} maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} className="field resize-y" />
+              {failure && <p role="alert" className="text-xs text-danger">{failure}</p>}
+              <button type="submit" disabled={busy || !text.trim()} className="meta h-11 text-gold-deep hover:underline disabled:text-slate/50 disabled:no-underline">
+                {busy ? 'Sending…' : 'Send reply'}
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+    </motion.li>
+  )
+}
+
 /* ───────── Saved products ───────── */
-export function SavedList({ slugs }: { slugs: string[] }) {
-  const [saved, setSaved] = useState(slugs)
+export function SavedList({ initial }: { initial: Product[] }) {
+  const [items, setItems] = useState(initial)
+  const [pending, setPending] = useState<string | null>(null)
   const { add, setOpen } = useCart()
   const toast = useToast()
-  const items = saved.map((s) => getProduct(s)).filter((p): p is NonNullable<typeof p> => !!p)
+
+  const unsave = async (p: Product) => {
+    setPending(p.id)
+    try {
+      await api(`/api/account/saved/${p.id}`, { method: 'PUT', body: { saved: false } })
+      setItems((s) => s.filter((x) => x.id !== p.id))
+    } catch (e) {
+      toast({ title: 'Could not remove', body: errorText(e), tone: 'error' })
+    } finally {
+      setPending(null)
+    }
+  }
 
   if (!items.length)
     return (
@@ -433,12 +578,12 @@ export function SavedList({ slugs }: { slugs: string[] }) {
     <ul className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
       <AnimatePresence initial={false}>
         {items.map((p) => {
-          const live = p.status === 'published'
+          const live = p.stock !== 'out_of_stock'
           return (
-            <motion.li key={p.slug} layout exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.5, ease: EASE }}>
+            <motion.li key={p.id} layout exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.5, ease: EASE }}>
               <Link href={`/products/${p.slug}`} className="group block">
                 <span className="relative block aspect-[4/5] overflow-hidden bg-pearl">
-                  <Image src={p.images[0].src} alt={p.images[0].alt} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
+                  <SafeImage src={p.images[0]?.src ?? ''} alt={p.images[0]?.alt ?? p.name} fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover transition-transform duration-[1.4s] ease-[var(--ease-luxe)] group-hover:scale-105" />
                 </span>
                 <span className="mt-4 flex items-start justify-between gap-4 border-t border-obsidian/10 pt-3">
                   <span className="text-sm font-medium text-obsidian group-hover:text-gold-deep">{p.name}</span>
@@ -449,17 +594,18 @@ export function SavedList({ slugs }: { slugs: string[] }) {
                 <button
                   type="button"
                   disabled={!live}
-                  onClick={() => {
-                    add(p.slug)
-                    toast({ title: `${p.name} added`, body: 'Prices exclude applicable taxes and shipping.' })
-                    setOpen(true)
+                  onClick={async () => {
+                    if (await add(p.id)) {
+                      toast({ title: `${p.name} added`, body: 'Prices exclude applicable taxes and shipping.' })
+                      setOpen(true)
+                    } else toast({ title: 'Could not add to cart', body: 'Please try again.', tone: 'error' })
                   }}
                   className="meta h-11 text-gold-deep underline-offset-4 hover:underline disabled:text-slate/50 disabled:no-underline"
                 >
-                  {live ? 'Add to cart' : 'Under review'}
+                  {live ? 'Add to cart' : 'Out of stock'}
                 </button>
-                <button type="button" onClick={() => setSaved((s) => s.filter((x) => x !== p.slug))} className="meta h-11 text-slate hover:text-danger" aria-label={`Remove ${p.name} from saved`}>
-                  Remove
+                <button type="button" disabled={pending === p.id} onClick={() => void unsave(p)} className="meta h-11 text-slate hover:text-danger disabled:opacity-50" aria-label={`Remove ${p.name} from saved`}>
+                  {pending === p.id ? 'Removing…' : 'Remove'}
                 </button>
               </div>
             </motion.li>
@@ -471,32 +617,50 @@ export function SavedList({ slugs }: { slugs: string[] }) {
 }
 
 /* ───────── Addresses ───────── */
-const blank: DemoAddress = { id: '', label: '', name: '', line1: '', line2: '', city: '', region: '', postal: '', country: '' }
+export type AccountAddress = { id: string; label: string; name: string; line1: string; line2: string; city: string; region: string; postal: string; country: string; phone: string; isDefault: boolean }
+type AccountDTO = { name: string; email: string; phone: string; marketingOptIn: boolean; addresses: AccountAddress[]; membership: MembershipState }
+const blank: AccountAddress = { id: '', label: '', name: '', line1: '', line2: '', city: '', region: '', postal: '', country: '', phone: '', isDefault: false }
+const body = ({ id: _id, ...a }: AccountAddress) => a
 
-export function AddressBook({ initial }: { initial: DemoAddress[] }) {
+export function AddressBook({ initial }: { initial: AccountAddress[] }) {
   const [list, setList] = useState(initial)
-  const [editing, setEditing] = useState<DemoAddress | null>(null)
+  const [editing, setEditing] = useState<AccountAddress | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState<string | null>(null)
+  const [failure, setFailure] = useState('')
   const toast = useToast()
 
-  const save = () => {
+  const call = async (key: string, req: () => Promise<AccountDTO>, done: string) => {
+    setBusy(key)
+    setFailure('')
+    try {
+      setList((await req()).addresses)
+      toast({ title: done })
+      return true
+    } catch (e) {
+      setFailure(errorText(e))
+      return false
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const save = async () => {
     const a = editing!
     const e: Record<string, string> = {}
-    for (const k of ['label', 'name', 'line1', 'city', 'region', 'postal', 'country'] as const) if (!a[k]?.trim()) e[k] = 'Required.'
+    for (const k of ['name', 'line1', 'city', 'country'] as const) if (a[k].trim().length < (k === 'city' ? 1 : 2)) e[k] = 'Required.'
     setErrors(e)
     const k = Object.keys(e)[0]
     if (k) return document.getElementById(`ad-${k}`)?.focus()
-    setList((s) => (a.id ? s.map((x) => (x.id === a.id ? a : x)) : [...s, { ...a, id: `a${Date.now()}` }]))
-    setEditing(null)
-    toast({ title: 'Address saved', body: 'Demo only — stored in this page session.' })
+    if (await call('save', () => api<AccountDTO>(a.id ? `/api/account/addresses/${a.id}` : '/api/account/addresses', { method: a.id ? 'PATCH' : 'POST', body: body(a) }), 'Address saved')) setEditing(null)
   }
 
-  const field = (k: keyof DemoAddress, label: string, ac: string, cls = '') => (
+  const field = (k: Exclude<keyof AccountAddress, 'id' | 'isDefault'>, label: string, ac: string, cls = '') => (
     <div className={cls}>
       <Label htmlFor={`ad-${k}`}>{label}</Label>
       <input
         id={`ad-${k}`}
-        value={String(editing?.[k] ?? '')}
+        value={editing?.[k] ?? ''}
         onChange={(e) => setEditing((s) => ({ ...s!, [k]: e.target.value }))}
         className="field"
         autoComplete={ac}
@@ -509,49 +673,52 @@ export function AddressBook({ initial }: { initial: DemoAddress[] }) {
 
   return (
     <div className="grid gap-14 lg:grid-cols-12">
-      <ul className="grid gap-6 sm:grid-cols-2 lg:col-span-7">
-        {list.map((a) => (
-          <li key={a.id} className="flex flex-col border border-obsidian/12 p-6">
-            <p className="flex items-center justify-between gap-3">
-              <span className="eyebrow text-obsidian">{a.label}</span>
-              {a.isDefault && <span className="meta text-gold-deep">Default</span>}
-            </p>
-            <address className="mt-4 text-sm not-italic leading-relaxed text-slate">
-              {a.name}
-              <br />
-              {a.line1}
-              {a.line2 && `, ${a.line2}`}
-              <br />
-              {a.city}, {a.region} {a.postal}
-              <br />
-              {a.country}
-            </address>
-            <div className="mt-auto flex gap-6 pt-6">
-              <button type="button" onClick={() => setEditing(a)} className="meta h-11 text-gold-deep hover:underline">
-                Edit
-              </button>
-              {!a.isDefault && (
-                <>
-                  <button type="button" onClick={() => setList((s) => s.map((x) => ({ ...x, isDefault: x.id === a.id })))} className="meta h-11 text-slate hover:text-obsidian">
-                    Make default
-                  </button>
-                  <button type="button" onClick={() => setList((s) => s.filter((x) => x.id !== a.id))} className="meta h-11 text-slate hover:text-danger">
-                    Remove
-                  </button>
-                </>
-              )}
-            </div>
+      <div className="lg:col-span-7">
+        {failure && !editing && <div className="mb-6"><FormError msg={failure} /></div>}
+        <ul className="grid gap-6 sm:grid-cols-2">
+          {list.map((a) => (
+            <li key={a.id} className="flex flex-col border border-obsidian/12 p-6">
+              <p className="flex items-center justify-between gap-3">
+                <span className="eyebrow text-obsidian">{a.label || 'Address'}</span>
+                {a.isDefault && <span className="meta text-gold-deep">Default</span>}
+              </p>
+              <address className="mt-4 text-sm not-italic leading-relaxed text-slate">
+                {a.name}
+                <br />
+                {a.line1}
+                {a.line2 && `, ${a.line2}`}
+                <br />
+                {[a.city, a.region].filter(Boolean).join(', ')} {a.postal}
+                <br />
+                {a.country}
+              </address>
+              <div className="mt-auto flex gap-6 pt-6">
+                <button type="button" onClick={() => setEditing(a)} className="meta h-11 text-gold-deep hover:underline">
+                  Edit
+                </button>
+                {!a.isDefault && (
+                  <>
+                    <button type="button" disabled={!!busy} onClick={() => void call(a.id, () => api<AccountDTO>(`/api/account/addresses/${a.id}`, { method: 'PATCH', body: { ...body(a), isDefault: true } }), 'Default address updated')} className="meta h-11 text-slate hover:text-obsidian disabled:opacity-50">
+                      Make default
+                    </button>
+                    <button type="button" disabled={!!busy} onClick={() => void call(a.id, () => api<AccountDTO>(`/api/account/addresses/${a.id}`, { method: 'DELETE' }), 'Address removed')} className="meta h-11 text-slate hover:text-danger disabled:opacity-50">
+                      Remove
+                    </button>
+                  </>
+                )}
+              </div>
+            </li>
+          ))}
+          <li>
+            <button type="button" onClick={() => setEditing({ ...blank })} className="grid h-full min-h-48 w-full place-items-center border border-dashed border-obsidian/20 text-sm text-obsidian transition-colors hover:border-gold-deep">
+              <span>
+                <span className="block font-display text-4xl font-light leading-none">+</span>
+                <span className="meta mt-3 block text-slate">Add an address</span>
+              </span>
+            </button>
           </li>
-        ))}
-        <li>
-          <button type="button" onClick={() => setEditing({ ...blank })} className="grid h-full min-h-48 w-full place-items-center border border-dashed border-obsidian/20 text-sm text-obsidian transition-colors hover:border-gold-deep">
-            <span>
-              <span className="block font-display text-4xl font-light leading-none">+</span>
-              <span className="meta mt-3 block text-slate">Add an address</span>
-            </span>
-          </button>
-        </li>
-      </ul>
+        </ul>
+      </div>
 
       <div className="lg:col-span-4 lg:col-start-9">
         <AnimatePresence mode="wait">
@@ -565,13 +732,13 @@ export function AddressBook({ initial }: { initial: DemoAddress[] }) {
               transition={{ duration: 0.5, ease: EASE }}
               onSubmit={(e) => {
                 e.preventDefault()
-                save()
+                void save()
               }}
               className="grid grid-cols-2 gap-x-6 gap-y-5"
               aria-label={editing.id ? 'Edit address' : 'New address'}
             >
               <p className="col-span-2 font-display text-3xl font-light text-obsidian">{editing.id ? 'Edit address' : 'New address'}</p>
-              {field('label', 'Label', 'off', 'col-span-2')}
+              {field('label', 'Label (optional)', 'off', 'col-span-2')}
               {field('name', 'Full name', 'shipping name', 'col-span-2')}
               {field('line1', 'Street address', 'shipping address-line1', 'col-span-2')}
               {field('line2', 'Apartment, suite (optional)', 'shipping address-line2', 'col-span-2')}
@@ -579,12 +746,14 @@ export function AddressBook({ initial }: { initial: DemoAddress[] }) {
               {field('region', 'State / region', 'shipping address-level1')}
               {field('postal', 'Postal code', 'shipping postal-code')}
               {field('country', 'Country', 'shipping country-name')}
+              {field('phone', 'Phone (optional)', 'shipping tel', 'col-span-2')}
+              {failure && <div className="col-span-2"><FormError msg={failure} /></div>}
               <div className="col-span-2 mt-4 flex items-center justify-between gap-4">
                 <button type="button" onClick={() => setEditing(null)} className="meta h-11 text-slate hover:text-obsidian">
                   Cancel
                 </button>
-                <button type="submit" className={btnClass('dark')}>
-                  <BtnInner variant="dark">Save address</BtnInner>
+                <button type="submit" disabled={busy === 'save'} className={btnClass('dark', 'disabled:opacity-50')}>
+                  <BtnInner variant="dark">{busy === 'save' ? 'Saving…' : 'Save address'}</BtnInner>
                 </button>
               </div>
             </motion.form>
@@ -600,82 +769,202 @@ export function AddressBook({ initial }: { initial: DemoAddress[] }) {
 }
 
 /* ───────── Details & preferences ───────── */
-export function DetailsForm({ name, email }: { name: string; email: string }) {
+export function DetailsForm({ account, paymentsAvailable }: { account: AccountDTO; paymentsAvailable: boolean }) {
   const toast = useToast()
-  const [v, setV] = useState({ name, email, phone: '' })
-  const [prefs, setPrefs] = useState({ orders: true, returns: true, offers: false })
+  const router = useRouter()
+  const [v, setV] = useState({ name: account.name, phone: account.phone })
+  const [optIn, setOptIn] = useState(account.marketingOptIn)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState('')
 
   return (
     <div className="grid gap-16 lg:grid-cols-12">
-      <form
-        noValidate
-        className="space-y-6 lg:col-span-6"
-        onSubmit={(e) => {
-          e.preventDefault()
-          const er: Record<string, string> = {}
-          if (!v.name.trim()) er.name = 'Enter your name.'
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.email.trim())) er.email = 'Enter a valid email address.'
-          setErrors(er)
-          if (Object.keys(er).length) return document.getElementById(`dt-${Object.keys(er)[0]}`)?.focus()
-          toast({ title: 'Details saved', body: 'Demo only — accounts are not yet connected.' })
-        }}
-      >
-        <h2 className="font-display text-4xl font-light text-obsidian">Personal details</h2>
-        {(
-          [
-            ['name', 'Full name', 'name', 'text'],
-            ['email', 'Email', 'email', 'email'],
-            ['phone', 'Phone (optional)', 'tel', 'tel'],
-          ] as const
-        ).map(([k, l, ac, t]) => (
-          <div key={k}>
-            <Label htmlFor={`dt-${k}`}>{l}</Label>
-            <input id={`dt-${k}`} type={t} value={v[k]} onChange={(e) => setV((s) => ({ ...s, [k]: e.target.value }))} autoComplete={ac} className="field" aria-invalid={!!errors[k] || undefined} aria-describedby={errors[k] ? `dt-${k}-err` : undefined} />
-            <Err id={`dt-${k}-err`} msg={errors[k]} />
+      <div className="space-y-16 lg:col-span-6">
+        <form
+          noValidate
+          className="space-y-6"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            const er: Record<string, string> = {}
+            if (v.name.trim().length < 2) er.name = 'Enter your name.'
+            if (v.phone.trim() && !/^[+()\d\s.-]{7,30}$/.test(v.phone.trim())) er.phone = 'Enter a valid phone number, or leave it blank.'
+            setErrors(er)
+            if (Object.keys(er).length) return document.getElementById(`dt-${Object.keys(er)[0]}`)?.focus()
+            setBusy(true)
+            setFailure('')
+            try {
+              await api('/api/account', { method: 'PATCH', body: { name: v.name.trim(), phone: v.phone.trim(), marketingOptIn: optIn } })
+              toast({ title: 'Details saved' })
+              router.refresh()
+            } catch (err) {
+              setFailure(errorText(err))
+            } finally {
+              setBusy(false)
+            }
+          }}
+        >
+          <h2 className="font-display text-4xl font-light text-obsidian">Personal details</h2>
+          <div>
+            <Label htmlFor="dt-name">Full name</Label>
+            <input id="dt-name" value={v.name} onChange={(e) => setV((s) => ({ ...s, name: e.target.value }))} autoComplete="name" className="field" aria-invalid={!!errors.name || undefined} aria-describedby={errors.name ? 'dt-name-err' : undefined} />
+            <Err id="dt-name-err" msg={errors.name} />
           </div>
-        ))}
-
-        <fieldset className="pt-6">
-          <legend className="meta text-slate">Email notifications</legend>
-          <div className="mt-3">
-            {(
-              [
-                ['orders', 'Order confirmations, shipping and delivery updates'],
-                ['returns', 'Return, refund and support case updates'],
-                ['offers', 'Seasonal selection and new arrivals'],
-              ] as const
-            ).map(([k, l]) => (
-              <label key={k} className="flex min-h-12 cursor-pointer items-center justify-between gap-6 border-b border-obsidian/8 text-sm text-obsidian">
-                {l}
-                <input type="checkbox" checked={prefs[k]} onChange={(e) => setPrefs((s) => ({ ...s, [k]: e.target.checked }))} className="peer sr-only" />
-                <span aria-hidden className="relative h-5 w-9 shrink-0 border border-obsidian/30 transition-colors peer-checked:border-gold-deep peer-focus-visible:outline peer-focus-visible:outline-1 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-gold">
-                  <span className={cn('absolute top-1/2 size-3 -translate-y-1/2 transition-all duration-500 ease-[var(--ease-luxe)]', prefs[k] ? 'left-[1.1rem] bg-gold-deep' : 'left-1 bg-obsidian/40')} />
-                </span>
-              </label>
-            ))}
+          <div>
+            <Label htmlFor="dt-email">Email</Label>
+            <input id="dt-email" type="email" value={account.email} readOnly className="field text-slate" aria-describedby="dt-email-hint" />
+            <p id="dt-email-hint" className="mt-1.5 text-xs text-slate/80">Contact support to change the email on your account.</p>
           </div>
-        </fieldset>
+          <div>
+            <Label htmlFor="dt-phone">Phone (optional)</Label>
+            <input id="dt-phone" type="tel" value={v.phone} onChange={(e) => setV((s) => ({ ...s, phone: e.target.value }))} autoComplete="tel" className="field" aria-invalid={!!errors.phone || undefined} aria-describedby={errors.phone ? 'dt-phone-err' : undefined} />
+            <Err id="dt-phone-err" msg={errors.phone} />
+          </div>
 
-        <button type="submit" className={cn(submitCls, 'mt-4')}>
-          <BtnInner variant="dark">Save details</BtnInner>
-        </button>
-      </form>
+          <fieldset className="pt-6">
+            <legend className="meta text-slate">Email preferences</legend>
+            <p className="mt-3 text-xs leading-relaxed text-slate">Order, shipping, return and account emails are always sent.</p>
+            <label className="mt-2 flex min-h-12 cursor-pointer items-center justify-between gap-6 border-b border-obsidian/8 text-sm text-obsidian">
+              Seasonal selection and new arrivals
+              <input type="checkbox" checked={optIn} onChange={(e) => setOptIn(e.target.checked)} className="peer sr-only" />
+              <span aria-hidden className="relative h-5 w-9 shrink-0 border border-obsidian/30 transition-colors peer-checked:border-gold-deep peer-focus-visible:outline peer-focus-visible:outline-1 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-gold">
+                <span className={cn('absolute top-1/2 size-3 -translate-y-1/2 transition-all duration-500 ease-[var(--ease-luxe)]', optIn ? 'left-[1.1rem] bg-gold-deep' : 'left-1 bg-obsidian/40')} />
+              </span>
+            </label>
+          </fieldset>
 
-      <aside className="lg:col-span-5 lg:col-start-8">
+          <FormError msg={failure} />
+          <button type="submit" disabled={busy} className={cn(submitCls, 'mt-4')}>
+            <BtnInner variant="dark">{busy ? 'Saving…' : 'Save details'}</BtnInner>
+          </button>
+        </form>
+
+        <PasswordForm />
+      </div>
+
+      <aside className="space-y-6 lg:col-span-5 lg:col-start-8">
+        <MembershipPanel initial={account.membership} paymentsAvailable={paymentsAvailable} />
         <div className="border border-obsidian/12 p-6 md:p-8">
-          <h2 className="eyebrow text-obsidian">Sign-in & security</h2>
-          <p className="mt-4 text-sm leading-relaxed text-slate">Password, sign-in methods and two-step verification are managed by the authentication provider once it is connected. Price-Select never asks for your password by email.</p>
-          <p className="meta mt-6 text-warning">Authentication not yet connected</p>
-        </div>
-        <div className="mt-6 border border-obsidian/12 p-6 md:p-8">
           <h2 className="eyebrow text-obsidian">Your data</h2>
-          <p className="mt-4 text-sm leading-relaxed text-slate">Requests to export or delete account data will be handled through support once the privacy policy and data processes are finalised.</p>
+          <p className="mt-4 text-sm leading-relaxed text-slate">Requests to export or delete account data are handled through support.</p>
           <Link href="/contact" className="link-line link-line--static eyebrow mt-6 text-obsidian">
             Contact support
           </Link>
         </div>
       </aside>
+    </div>
+  )
+}
+
+function PasswordForm() {
+  const toast = useToast()
+  const [cur, setCur] = useState('')
+  const [next, setNext] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState('')
+  return (
+    <form
+      noValidate
+      className="space-y-6"
+      onSubmit={async (e) => {
+        e.preventDefault()
+        if (!cur || next.length < 10) return setFailure('Enter your current password and a new password of at least 10 characters.')
+        setBusy(true)
+        setFailure('')
+        try {
+          await api('/api/session/password', { body: { currentPassword: cur, newPassword: next } })
+          setCur('')
+          setNext('')
+          toast({ title: 'Password changed', body: 'Other devices have been signed out.' })
+        } catch (err) {
+          setFailure(errorText(err))
+        } finally {
+          setBusy(false)
+        }
+      }}
+    >
+      <h2 className="font-display text-4xl font-light text-obsidian">Password</h2>
+      <div>
+        <Label htmlFor="pw-cur">Current password</Label>
+        <input id="pw-cur" type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" className="field" />
+      </div>
+      <div>
+        <Label htmlFor="pw-new">New password</Label>
+        <input id="pw-new" type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" minLength={10} className="field" aria-describedby="pw-new-hint" />
+        <p id="pw-new-hint" className="mt-1.5 text-xs text-slate/80">At least 10 characters.</p>
+      </div>
+      <FormError msg={failure} />
+      <button type="submit" disabled={busy} className={submitCls}>
+        <BtnInner variant="dark">{busy ? 'Updating…' : 'Change password'}</BtnInner>
+      </button>
+    </form>
+  )
+}
+
+const TIERS: MembershipTier[] = ['member', 'member_plus']
+
+/** Membership is shown as active only when the server says so; purchase needs a payment provider. */
+function MembershipPanel({ initial, paymentsAvailable }: { initial: MembershipState; paymentsAvailable: boolean }) {
+  const toast = useToast()
+  const [m, setM] = useState(initial)
+  const [busy, setBusy] = useState(false)
+  const [failure, setFailure] = useState('')
+  const [unavailable, setUnavailable] = useState(!paymentsAvailable)
+  const [key] = useState(idempotencyKey)
+  const active = m.status === 'active'
+  const label = (t: MembershipTier | null) => (t === 'member_plus' ? MEMBERSHIPS[1][0] : MEMBERSHIPS[0][0])
+
+  const run = async (req: () => Promise<{ membership: MembershipState }>, ok: string) => {
+    setBusy(true)
+    setFailure('')
+    try {
+      const r = await req()
+      setM(r.membership)
+      if (r.membership.status === 'active' || r.membership.cancelAtPeriodEnd) toast({ title: ok })
+    } catch (e) {
+      if (e instanceof ApiError && e.unavailable) setUnavailable(true)
+      else setFailure(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="border border-obsidian/12 p-6 md:p-8">
+      <h2 className="eyebrow text-obsidian">Membership</h2>
+      {active ? (
+        <>
+          <p className="mt-4 font-display text-3xl font-light text-obsidian">{label(m.tier)}</p>
+          <p className="mt-2 text-sm text-slate">
+            {m.cancelAtPeriodEnd ? `Ends ${safeDate(m.renewsAt)}. Auto-renewal is off.` : `Renews ${safeDate(m.renewsAt)}.`}
+          </p>
+          {!m.cancelAtPeriodEnd && (
+            <button type="button" disabled={busy} onClick={() => void run(() => api('/api/account/membership', { method: 'DELETE' }), 'Auto-renewal turned off')} className="meta mt-6 h-11 text-slate hover:text-danger disabled:opacity-50">
+              {busy ? 'Updating…' : 'Turn off auto-renewal'}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          {m.status === 'pending_payment' && <p className="mt-4 text-sm text-warning">A membership payment is awaiting confirmation. Benefits start once it is confirmed.</p>}
+          <ul className="mt-4 space-y-5">
+            {TIERS.map((t, i) => (
+              <li key={t} className="border-t border-obsidian/10 pt-4">
+                <p className="flex items-baseline justify-between gap-4">
+                  <span className="text-sm font-medium text-obsidian">{MEMBERSHIPS[i][0]}</span>
+                  <span className="text-sm tabular-nums text-obsidian">{MEMBERSHIPS[i][1]}</span>
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-slate">{MEMBERSHIPS[i][2]}</p>
+                <button type="button" disabled={busy || unavailable || m.status === 'pending_payment'} onClick={() => void run(() => api('/api/account/membership', { body: { tier: t, idempotencyKey: `${key}-${t}` } }), `${MEMBERSHIPS[i][0]} is active`)} className="meta mt-3 h-11 text-gold-deep hover:underline disabled:text-slate/50 disabled:no-underline">
+                  {busy ? 'Processing…' : `Join ${MEMBERSHIPS[i][0]}`}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {unavailable && <p role="status" className="mt-4 text-xs leading-relaxed text-slate">Membership purchase will open once online payment is connected.</p>}
+        </>
+      )}
+      {failure && <p role="alert" className="mt-4 text-xs text-danger">{failure}</p>}
     </div>
   )
 }

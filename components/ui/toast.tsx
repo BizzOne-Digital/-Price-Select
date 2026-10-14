@@ -1,11 +1,11 @@
 'use client'
 
 import { AnimatePresence, motion } from 'motion/react'
-import { Check } from 'lucide-react'
+import { AlertTriangle, Check } from 'lucide-react'
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react'
 import { EASE } from '@/components/motion/primitives'
 
-type Toast = { id: number; title: string; body?: string }
+type Toast = { id: number; title: string; body?: string; tone?: 'success' | 'error' }
 const Ctx = createContext<(t: Omit<Toast, 'id'>) => void>(() => {})
 
 export const useToast = () => useContext(Ctx)
@@ -15,7 +15,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const push = useCallback((t: Omit<Toast, 'id'>) => {
     const id = Date.now() + Math.random()
     setItems((s) => [...s, { ...t, id }])
-    setTimeout(() => setItems((s) => s.filter((x) => x.id !== id)), 4200)
+    setTimeout(() => setItems((s) => s.filter((x) => x.id !== id)), t.tone === 'error' ? 7000 : 4200)
   }, [])
   return (
     <Ctx.Provider value={push}>
@@ -30,10 +30,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               exit={{ opacity: 0, y: 12 }}
               transition={{ duration: 0.6, ease: EASE }}
+              role={t.tone === 'error' ? 'alert' : undefined}
               className="pointer-events-auto flex items-start gap-4 border border-champagne/25 bg-ivory/95 px-5 py-4 text-obsidian shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] backdrop-blur"
             >
-              <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-champagne/50 text-teal">
-                <Check className="size-3" strokeWidth={1.5} />
+              <span className={t.tone === 'error' ? 'mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-danger/50 text-danger' : 'mt-0.5 grid size-6 shrink-0 place-items-center rounded-full border border-champagne/50 text-teal'}>
+                {t.tone === 'error' ? <AlertTriangle className="size-3" strokeWidth={1.5} /> : <Check className="size-3" strokeWidth={1.5} />}
               </span>
               <div>
                 <p className="text-sm font-medium">{t.title}</p>

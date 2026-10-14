@@ -5,17 +5,20 @@ import { ImageReveal, LineReveal, Reveal, SplitText } from '@/components/motion/
 import { ButtonLink, Eyebrow, TextLink } from '@/components/site/ui'
 import { ProductCard } from '@/components/commerce/product-card'
 import { DISCOUNT_NOTE } from '@/components/templates/blocks'
-import { categories } from '@/lib/data/categories'
-import { featuredProducts, seasonalProducts } from '@/lib/data/products'
+import { featuredProducts, listCategories, seasonalProducts } from '@/lib/server/services/catalog'
 import { IMAGES } from '@/lib/img'
 import { MEMBERSHIPS } from '@/lib/site'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = { title: 'Template B · Editorial' }
 
-export default function EditorialTemplate() {
+export const dynamic = 'force-dynamic'
+
+export default async function EditorialTemplate() {
+  // Design preview built on the public catalog (published listings only); empty sections hide gracefully.
+  const [categories, featured, seasonal] = await Promise.all([listCategories().catch(() => []), featuredProducts().catch(() => []), seasonalProducts().catch(() => [])])
   const features = categories.slice(0, 3)
-  const rail = [...seasonalProducts, ...featuredProducts.filter((p) => !seasonalProducts.includes(p))].slice(0, 8)
+  const rail = [...seasonal, ...featured.filter((p) => !seasonal.some((x) => x.id === p.id))].slice(0, 8)
 
   return (
     <>
@@ -72,7 +75,7 @@ export default function EditorialTemplate() {
           {features.map((c, i) => (
             <article key={c.slug} className="grid items-center gap-10 lg:grid-cols-12">
               <ImageReveal
-                src={c.image}
+                src={c.image || '/placeholder.svg'}
                 alt={c.imageAlt}
                 direction={i % 2 ? 'right' : 'left'}
                 sizes="(min-width:1024px) 58vw, 100vw"

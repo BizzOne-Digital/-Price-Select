@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { LockKeyhole } from 'lucide-react'
 import { CheckoutFlow } from '@/components/commerce/checkout-flow'
-import { DemoNote } from '@/components/site/ui'
 
 export const metadata: Metadata = {
   title: 'Checkout',
@@ -11,6 +10,8 @@ export const metadata: Metadata = {
 }
 
 /** Quiet by design: no hero, no entrance choreography — just the task. */
+export const dynamic = 'force-dynamic'
+
 export default function Checkout() {
   return (
     <>
@@ -23,7 +24,7 @@ export default function Checkout() {
             </p>
             <h1 className="mt-4 font-display text-5xl font-light tracking-[-0.03em] md:text-6xl">Checkout</h1>
           </div>
-          <DemoNote light>Demonstration environment — no payment is taken</DemoNote>
+          
         </div>
         <div aria-hidden className="sel-line sel-line--gold" />
       </section>

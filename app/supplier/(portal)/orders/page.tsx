@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { SupplierOrders } from '@/components/supplier/orders'
+import { ackDeadlines, loadTargets, supplierContext } from '@/components/supplier/server'
+import { myFulfillments } from '@/lib/server/services/operations'
 
 export const metadata: Metadata = {
   title: 'Orders',
@@ -7,6 +9,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/supplier/orders' },
 }
 
-export default function SupplierOrdersPage() {
-  return <SupplierOrders />
+export default async function SupplierOrdersPage() {
+  const ctx = await supplierContext()
+  if (!ctx) return null
+  const [items, { settings, targets }] = await Promise.all([myFulfillments(ctx.actor), loadTargets()])
+  return <SupplierOrders initial={items} ack={ackDeadlines(settings, items)} targets={targets} asOf={new Date().toISOString()} />
 }

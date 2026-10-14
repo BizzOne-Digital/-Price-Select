@@ -1,46 +1,51 @@
 'use client'
 
 import Image from 'next/image'
-import { Plus, ShieldCheck } from 'lucide-react'
-import { useEffect, useState } from 'react'
-import type { CategorySlug, Product, StockStatus } from '@/lib/types'
-import { categories, categoryName, getCategory } from '@/lib/data/categories'
-import { STOCK_LABEL } from '@/lib/data/products'
+import { Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import type { Category, ProductAdmin } from '@/lib/types'
+import { STOCK_LABEL } from '@/lib/labels'
 import { money } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import { ActionButton, DataTable, DemoBanner, Field, PageHeader, Panel, StatusBadge, Tabs } from '@/components/dashboard/kit'
+import { ApiError, api, errorText } from '@/lib/client/api'
+import { privateAssetUrl, uploadPrivate } from '@/lib/client/upload'
+import { ActionButton, DataTable, Field, PageHeader, Panel, StatusBadge, Tabs } from '@/components/dashboard/kit'
 import { useToast } from '@/components/ui/toast'
-import { myProducts, supplier } from './data'
+import { dateTime } from './data'
 import { Drawer, Err, FilePick, Tick } from './ui'
 
-type Row = Pick<Product, 'sku' | 'name' | 'category' | 'price' | 'stock' | 'stockQty' | 'status' | 'compliance' | 'handlingDays'> & { image?: string; local?: boolean }
+export type SupplierCategory = Pick<Category, 'slug' | 'name' | 'reviewLevel' | 'reviewNote'> & { requiredDocuments: string[] }
 
-const SHIPPING = ['Standard parcel', 'Expedited parcel', 'LTL / freight', 'Local delivery']
+const EDITABLE = ['draft', 'rejected']
+const ATTACHABLE = ['draft', 'rejected', 'pending_review', 'flagged']
 
-const docsState = (c: Row['compliance']) => {
+const docsState = (c: ProductAdmin['compliance']) => {
+  if (!c.length) return { status: 'muted', label: 'None required' }
   const on = c.filter((d) => d.status === 'on_file').length
-  return on === c.length ? { status: 'on_file', label: `Complete · ${on}/${c.length}` } : { status: c.some((d) => d.status === 'required') ? 'required' : 'pending', label: `${c.length - on} pending · ${on}/${c.length}` }
+  return on === c.length ? { status: 'on_file', label: `Complete · ${on}/${c.length}` } : { status: c.some((d) => d.status === 'required' || d.status === 'rejected') ? 'required' : 'pending', label: `${c.length - on} open · ${on}/${c.length}` }
 }
 
-export function SupplierProducts() {
-  const [rows, setRows] = useState<Row[]>(() => myProducts.map((p) => ({ ...p, image: p.images[0]?.src })))
-  const [tab, setTab] = useState<'all' | 'published' | 'pending_review' | 'attention'>('all')
-  const [open, setOpen] = useState(false)
-  const shown = rows.filter((r) => (tab === 'all' ? true : tab === 'attention' ? r.status === 'flagged' || r.status === 'suspended' || r.compliance.some((d) => d.status !== 'on_file') : r.status === tab))
+export function SupplierProducts({ initial, categories }: { initial: ProductAdmin[]; categories: SupplierCategory[] }) {
+  const [rows, setRows] = useState(initial)
+  const [tab, setTab] = useState<'all' | 'draft' | 'pending_review' | 'published' | 'attention'>('all')
+  const [open, setOpen] = useState<string | 'new' | null>(null)
+  const attention = (r: ProductAdmin) => ['rejected', 'flagged', 'suspended'].includes(r.status) || r.compliance.some((d) => d.status === 'required' || d.status === 'rejected')
+  const shown = rows.filter((r) => (tab === 'all' ? true : tab === 'attention' ? attention(r) : tab === 'draft' ? EDITABLE.includes(r.status) : r.status === tab))
+  const catName = (slug: string) => categories.find((c) => c.slug === slug)?.name ?? slug
+  const upsert = (p: ProductAdmin) => setRows((s) => (s.some((x) => x.id === p.id) ? s.map((x) => (x.id === p.id ? p : x)) : [p, ...s]))
 
   return (
     <>
       <PageHeader
         eyebrow="Catalog"
         title="Products"
-        description="Your listings on Price-Select. New products and material changes are reviewed by the Price-Select team before they publish."
+        description="Your listings on Price-Select. Drafts are reviewed by the Price-Select team, who publish approved listings and images. Live listings can only be changed through Price-Select."
         actions={
-          <ActionButton tone="primary" onClick={() => setOpen(true)}>
+          <ActionButton tone="primary" onClick={() => setOpen('new')} disabled={!categories.length}>
             <Plus className="size-3.5" strokeWidth={1.6} aria-hidden /> New product
           </ActionButton>
         }
       />
-      <DemoBanner>Sample catalog. Submissions stay in this browser session and are not sent for review.</DemoBanner>
+      {!categories.length && <p className="mb-6 text-sm text-danger">No approved categories are on your account. Contact Price-Select before creating listings.</p>}
 
       <Panel pad={false}>
         <div className="px-5 pt-4">
@@ -49,244 +54,327 @@ export function SupplierProducts() {
             onChange={setTab}
             options={[
               { value: 'all', label: 'All', count: rows.length },
-              { value: 'published', label: 'Published', count: rows.filter((r) => r.status === 'published').length },
+              { value: 'draft', label: 'Drafts', count: rows.filter((r) => EDITABLE.includes(r.status)).length },
               { value: 'pending_review', label: 'Pending review', count: rows.filter((r) => r.status === 'pending_review').length },
-              { value: 'attention', label: 'Needs documents', count: rows.filter((r) => r.compliance.some((d) => d.status !== 'on_file')).length },
+              { value: 'published', label: 'Published', count: rows.filter((r) => r.status === 'published').length },
+              { value: 'attention', label: 'Needs attention', count: rows.filter(attention).length },
             ]}
           />
         </div>
         <DataTable
           caption="Your products"
           rows={shown}
-          rowKey={(r) => r.sku}
-          empty="No products in this view."
+          rowKey={(r) => r.id}
+          empty={rows.length ? 'No products in this view.' : 'No products yet. Create your first listing.'}
           columns={[
             {
               key: 'title',
               header: 'Product',
               sort: (r) => r.name,
               cell: (r) => (
-                <span className="flex items-center gap-3">
+                <button onClick={() => setOpen(r.id)} className="flex items-center gap-3 text-left">
                   <span className="relative size-11 shrink-0 overflow-hidden bg-pearl">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {r.image && (r.local ? <img src={r.image} alt="" className="size-full object-cover" /> : <Image src={r.image} alt="" fill sizes="44px" className="object-cover" />)}
+                    {r.images[0] ? (
+                      <Image src={r.images[0].src} alt="" fill sizes="44px" className="object-cover" />
+                    ) : r.stagedImages[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={privateAssetUrl(r.stagedImages[0].assetId)} alt="" className="size-full object-cover" />
+                    ) : null}
                   </span>
                   <span className="min-w-0">
-                    <span className="block font-medium">{r.name}</span>
+                    <span className="link-line block font-medium">{r.name}</span>
                     <span className="block text-xs tabular-nums text-slate">{r.sku}</span>
                   </span>
-                </span>
+                </button>
               ),
             },
-            { key: 'cat', header: 'Category', cell: (r) => <span className="text-slate">{categoryName(r.category)}</span> },
+            { key: 'cat', header: 'Category', cell: (r) => <span className="text-slate">{catName(r.category)}</span> },
             { key: 'price', header: 'Price', align: 'right', sort: (r) => r.price, cell: (r) => money(r.price) },
-            { key: 'stock', header: 'Stock', sort: (r) => r.stockQty, cell: (r) => <span className="flex items-center gap-3"><span className="w-10 text-right tabular-nums">{r.stockQty}</span><StatusBadge status={r.stock} label={STOCK_LABEL[r.stock]} /></span> },
-            { key: 'status', header: 'Listing', cell: (r) => <StatusBadge status={r.status} /> },
+            { key: 'stock', header: 'Available', sort: (r) => r.inventory.available, cell: (r) => <span className="flex items-center gap-3"><span className="w-10 text-right tabular-nums">{r.inventory.available}</span><StatusBadge status={r.stock} label={STOCK_LABEL[r.stock]} /></span> },
+            { key: 'status', header: 'Listing', cell: (r) => <span title={r.statusReason}><StatusBadge status={r.status} /></span> },
             { key: 'docs', header: 'Compliance docs', cell: (r) => { const d = docsState(r.compliance); return <span title={r.compliance.map((c) => `${c.label}: ${c.status.replace('_', ' ')}`).join('\n')}><StatusBadge status={d.status} label={d.label} /></span> } },
           ]}
         />
       </Panel>
-      <p className="mt-4 text-xs text-slate">Compliance documentation supports the review workflow and is not legal advice. Enhanced-review categories need certificates on file before publishing.</p>
+      <p className="mt-4 text-xs text-slate">Compliance documentation supports the review workflow and is not legal advice. Enhanced-review categories need certificates on file and a Price-Select sign-off before publishing.</p>
 
-      <NewProduct open={open} onClose={() => setOpen(false)} skus={rows.map((r) => r.sku)} onSubmit={(r) => setRows((s) => [r, ...s])} />
+      <ProductEditor key={open ?? 'closed'} open={!!open} product={open && open !== 'new' ? rows.find((r) => r.id === open) ?? null : null} categories={categories} onClose={() => setOpen(null)} onSaved={(p) => (upsert(p), setOpen(p.id))} />
     </>
   )
 }
 
 type Draft = {
-  sku: string; title: string; description: string; category: CategorySlug | ''; price: string; upc: string
-  weight: string; l: string; w: string; h: string; availability: StockStatus; qty: string; handling: string
-  shipping: string[]; images: File[]; docs: string[]; authentic: boolean
+  name: string; brand: string; category: string; price: string; sku: string; summary: string; description: string
+  specs: { label: string; value: string }[]; upc: string; weightKg: string; dimensions: string; handlingDays: string
+  deliveryEstimate: string; madeToOrder: boolean; onHand: string
 }
-const BLANK: Draft = { sku: '', title: '', description: '', category: supplier.categories[0] ?? '', price: '', upc: '', weight: '', l: '', w: '', h: '', availability: 'in_stock', qty: '', handling: '2', shipping: ['Standard parcel'], images: [], docs: [], authentic: false }
+const toDraft = (p: ProductAdmin | null, cat: string): Draft =>
+  p
+    ? { name: p.name, brand: p.brand, category: p.category, price: String(p.price), sku: p.sku, summary: p.summary, description: p.description, specs: p.specs.length ? p.specs : [{ label: '', value: '' }], upc: p.upc ?? '', weightKg: p.weightKg ? String(p.weightKg) : '', dimensions: p.dimensions, handlingDays: String(p.handlingDays), deliveryEstimate: p.deliveryEstimate, madeToOrder: p.madeToOrder, onHand: String(p.inventory.onHand) }
+    : { name: '', brand: '', category: cat, price: '', sku: '', summary: '', description: '', specs: [{ label: '', value: '' }], upc: '', weightKg: '', dimensions: '', handlingDays: '2', deliveryEstimate: '', madeToOrder: false, onHand: '0' }
 
-function check(d: Draft, skus: string[]) {
-  const e: Partial<Record<keyof Draft | 'dims', string>> = {}
-  if (!/^[A-Z0-9][A-Z0-9-]{3,23}$/i.test(d.sku)) e.sku = '4–24 letters, numbers or dashes.'
-  else if (skus.includes(d.sku.toUpperCase())) e.sku = 'This SKU already exists in your catalog.'
-  if (d.title.trim().length < 4) e.title = 'Enter a product title.'
-  if (d.description.trim().length < 40) e.description = `At least 40 characters (${d.description.trim().length}/40).`
+type Errs = Partial<Record<keyof Draft, string>>
+
+function check(d: Draft): Errs {
+  const e: Errs = {}
+  if (d.name.trim().length < 2) e.name = 'Enter a product name.'
   if (!d.category) e.category = 'Choose a category.'
   if (!(Number(d.price) > 0)) e.price = 'Enter a price above zero.'
-  if (d.upc && !/^(\d{8}|\d{12,14})$/.test(d.upc)) e.upc = 'UPC/EAN is 8, 12, 13 or 14 digits.'
-  if (!d.images.length) e.images = 'Add at least one product image.'
-  if (!(Number(d.weight) > 0)) e.weight = 'Enter the shipping weight.'
-  if (![d.l, d.w, d.h].every((v) => Number(v) > 0)) e.dims = 'Enter length, width and height.'
-  if (d.availability !== 'made_to_order' && d.availability !== 'out_of_stock' && !(Number(d.qty) >= 0 && d.qty !== '')) e.qty = 'Enter available quantity.'
-  if (!(Number(d.handling) >= 0 && d.handling !== '')) e.handling = 'Enter handling time in business days.'
-  if (!d.shipping.length) e.shipping = 'Select at least one shipping option.'
-  if (d.category && getCategory(d.category)?.reviewLevel === 'enhanced' && !d.docs.length) e.docs = 'This category requires compliance documents.'
-  if (!d.authentic) e.authentic = 'Required before a listing can be submitted.'
+  if (!/^[A-Z0-9][A-Z0-9._-]{1,39}$/i.test(d.sku.trim())) e.sku = '2–40 letters, numbers, dot, dash or underscore.'
+  if (d.upc && !/^\d{8,14}$/.test(d.upc)) e.upc = 'UPC/EAN is 8–14 digits.'
+  if (d.weightKg && !(Number(d.weightKg) >= 0)) e.weightKg = 'Enter a weight in kg.'
+  if (!/^\d{1,3}$/.test(d.handlingDays)) e.handlingDays = 'Whole business days (0–120).'
+  if (!/^\d{1,7}$/.test(d.onHand)) e.onHand = 'Whole number.'
+  if (d.specs.some((s) => (s.label.trim() && !s.value.trim()) || (!s.label.trim() && s.value.trim()))) e.specs = 'Each spec needs a label and a value.'
   return e
 }
 
-function NewProduct({ open, onClose, skus, onSubmit }: { open: boolean; onClose: () => void; skus: string[]; onSubmit: (r: Row) => void }) {
+const payload = (d: Draft) => ({
+  name: d.name.trim(), brand: d.brand.trim(), category: d.category, price: Number(d.price), sku: d.sku.trim().toUpperCase(),
+  summary: d.summary.trim(), description: d.description.trim(),
+  specs: d.specs.filter((s) => s.label.trim() && s.value.trim()).map((s) => ({ label: s.label.trim(), value: s.value.trim() })),
+  upc: d.upc, weightKg: Number(d.weightKg) || 0, dimensions: d.dimensions.trim(), handlingDays: Number(d.handlingDays),
+  deliveryEstimate: d.deliveryEstimate.trim(), madeToOrder: d.madeToOrder, onHand: Number(d.onHand),
+})
+
+/** Map Zod issue paths from the server onto form fields. */
+const fieldErrors = (e: unknown): Errs => {
+  if (!(e instanceof ApiError) || !Array.isArray(e.details)) return {}
+  const out: Errs = {}
+  for (const x of e.details as { path?: string; message?: string }[]) {
+    const k = x?.path?.split('.')[0] as keyof Draft | undefined
+    if (k && x.message && !out[k]) out[k] = x.message
+  }
+  return out
+}
+
+function ProductEditor({ open, product, categories, onClose, onSaved }: { open: boolean; product: ProductAdmin | null; categories: SupplierCategory[]; onClose: () => void; onSaved: (p: ProductAdmin) => void }) {
   const toast = useToast()
-  const [d, setD] = useState<Draft>(BLANK)
+  const [d, setD] = useState<Draft>(() => toDraft(product, categories[0]?.slug ?? ''))
   const [tried, setTried] = useState(false)
-  const [done, setDone] = useState<Row | null>(null)
-  const [previews, setPreviews] = useState<string[]>([])
-  const e = tried ? check(d, skus) : {}
-  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((s) => ({ ...s, [k]: v }))
-  const cat = d.category ? getCategory(d.category) : undefined
+  const [serverErrs, setServerErrs] = useState<Errs>({})
+  const [error, setError] = useState<string>()
+  const [busy, setBusy] = useState<'save' | 'submit' | null>(null)
+  const [alt, setAlt] = useState('')
+  const editable = !product || EDITABLE.includes(product.status)
+  const attachable = !!product && ATTACHABLE.includes(product.status)
+  const e = { ...(tried ? check(d) : {}), ...serverErrs }
+  const set = <K extends keyof Draft>(k: K, v: Draft[K]) => (setD((s) => ({ ...s, [k]: v })), setServerErrs((s) => ({ ...s, [k]: undefined })))
+  const cat = categories.find((c) => c.slug === d.category)
 
-  useEffect(() => {
-    const urls = d.images.map((f) => URL.createObjectURL(f))
-    setPreviews(urls)
-    return () => urls.forEach(URL.revokeObjectURL)
-  }, [d.images])
-
-  const reset = () => {
-    setD(BLANK)
-    setTried(false)
-    setDone(null)
-  }
-  const close = () => {
-    onClose()
-    if (done) reset()
-  }
-
-  const submit = () => {
+  const save = async (): Promise<ProductAdmin | null> => {
     setTried(true)
-    const errs = check(d, skus)
-    if (Object.keys(errs).length) {
+    setError(undefined)
+    if (Object.keys(check(d)).length) {
       requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="dialog"] [aria-invalid="true"]')?.focus())
-      return
+      return null
     }
-    const row: Row = {
-      sku: d.sku.toUpperCase(), name: d.title.trim(), category: d.category as CategorySlug, price: Number(d.price),
-      stock: d.availability, stockQty: Number(d.qty) || 0, handlingDays: Number(d.handling), status: 'pending_review',
-      compliance: [{ label: 'Authenticity & new-condition confirmation', status: 'on_file' }, ...d.docs.map((n) => ({ label: n, status: 'pending' as const }))],
-      image: d.images[0] ? URL.createObjectURL(d.images[0]) : undefined, local: true,
+    try {
+      const p = product ? await api<ProductAdmin>(`/api/supplier/products/${product.id}`, { method: 'PATCH', body: payload(d) }) : await api<ProductAdmin>('/api/supplier/products', { body: payload(d) })
+      setServerErrs({})
+      onSaved(p)
+      return p
+    } catch (x) {
+      setServerErrs(fieldErrors(x))
+      setError(errorText(x))
+      return null
     }
-    onSubmit(row)
-    setDone(row)
-    toast({ title: 'Submitted for review (demo)', body: `${row.sku} is pending review by the Price-Select team.` })
   }
+
+  const attach = async (body: Record<string, unknown>, file: File, purpose: 'product_image' | 'product_document', onProgress: (p: number) => void, label?: string) => {
+    if (!product) return
+    onProgress(0.05)
+    const a = await uploadPrivate(file, purpose, label?.slice(0, 120), onProgress)
+    onSaved(await api<ProductAdmin>(`/api/supplier/products/${product.id}/attach`, { body: { assetId: a.id, ...body } }))
+  }
+
+  const footer = (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-xs text-slate">{editable ? 'Only Price-Select can publish a listing.' : `This listing is ${product?.status.replace('_', ' ')}; details are locked.`}</p>
+      <div className="flex gap-3">
+        <ActionButton tone="ghost" onClick={onClose}>Close</ActionButton>
+        {editable && (
+          <ActionButton disabled={!!busy} onClick={async () => { setBusy('save'); const p = await save(); setBusy(null); if (p) toast({ title: product ? 'Draft saved' : 'Draft created', body: product ? undefined : 'Add images and documents, then submit for review.' }) }}>
+            {busy === 'save' ? 'Saving…' : product ? 'Save draft' : 'Create draft'}
+          </ActionButton>
+        )}
+        {editable && product && (
+          <ActionButton
+            tone="primary"
+            disabled={!!busy}
+            onClick={async () => {
+              setBusy('submit')
+              const p = await save()
+              if (p) {
+                try {
+                  onSaved(await api<ProductAdmin>(`/api/supplier/products/${p.id}/submit`, { method: 'POST' }))
+                  toast({ title: 'Submitted for review', body: `${p.sku} is pending review by the Price-Select team.` })
+                } catch (x) {
+                  setError(errorText(x))
+                }
+              }
+              setBusy(null)
+            }}
+          >
+            {busy === 'submit' ? 'Submitting…' : 'Submit for review'}
+          </ActionButton>
+        )}
+      </div>
+    </div>
+  )
 
   return (
-    <Drawer
-      open={open}
-      onClose={close}
-      eyebrow={done ? 'Submitted' : 'New listing'}
-      title={done ? 'Pending review' : 'New product'}
-      footer={
-        done ? (
-          <div className="flex flex-wrap justify-end gap-3">
-            <ActionButton onClick={reset}>Add another</ActionButton>
-            <ActionButton tone="primary" onClick={close}>Done</ActionButton>
-          </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-slate">{tried && Object.keys(e).length ? `${Object.keys(e).length} field(s) need attention` : 'Listings publish only after admin review.'}</p>
-            <div className="flex gap-3">
-              <ActionButton tone="ghost" onClick={close}>Cancel</ActionButton>
-              <ActionButton tone="primary" onClick={submit}>Submit for review</ActionButton>
-            </div>
-          </div>
-        )
-      }
-    >
-      {done ? (
-        <div className="space-y-8">
-          <p className="max-w-lg text-sm leading-relaxed text-slate">
-            <span className="font-medium text-obsidian">{done.name}</span> ({done.sku}) has status <StatusBadge status="pending_review" />. The Price-Select team checks the description, images, pricing and documentation before the listing publishes. You will be notified of the decision.
+    <Drawer open={open} onClose={onClose} eyebrow={product ? `${product.sku} · ${product.status.replace('_', ' ')}` : 'New listing'} title={product ? product.name : 'New product'} footer={footer}>
+      <form noValidate className="space-y-12" onSubmit={(ev) => ev.preventDefault()}>
+        {product?.statusReason && ['rejected', 'flagged', 'suspended', 'withdrawn'].includes(product.status) && (
+          <p className="border-l-2 border-danger/60 bg-danger/[0.05] px-4 py-3 text-sm" role="status">
+            <span className="eyebrow mr-2 text-danger">Price-Select note</span>
+            {product.statusReason}
           </p>
-          {getCategory(done.category)?.reviewLevel === 'enhanced' && (
-            <div className="border-l-2 border-warning bg-warning/[0.07] px-4 py-3 text-sm leading-relaxed">
-              <p className="eyebrow text-[#9a6a24]">Enhanced review</p>
-              <p className="mt-1 text-slate">{getCategory(done.category)?.reviewNote}</p>
-            </div>
-          )}
-          <p className="text-xs text-slate">Demonstration only — nothing was uploaded or sent.</p>
-        </div>
-      ) : (
-        <form
-          noValidate
-          className="space-y-12"
-          onSubmit={(ev) => {
-            ev.preventDefault()
-            submit()
-          }}
-        >
+        )}
+        {error && <p className="border-l-2 border-danger/60 px-4 py-2 text-sm text-danger" role="alert">{error}</p>}
+
+        <fieldset disabled={!editable} className="space-y-12">
           <Section n="01" title="Identity">
             <div className="grid gap-6 md:grid-cols-2">
-              <Field label="SKU"><input className="field uppercase tabular-nums" value={d.sku} onChange={(x) => set('sku', x.target.value)} aria-invalid={!!e.sku} placeholder="HEL-PS-3000" /><Err msg={e.sku} /></Field>
-              <Field label="UPC / EAN (optional)"><input className="field tabular-nums" inputMode="numeric" value={d.upc} onChange={(x) => set('upc', x.target.value.replace(/\D/g, ''))} aria-invalid={!!e.upc} /><Err msg={e.upc} /></Field>
-              <Field label="Title" className="md:col-span-2"><input className="field" value={d.title} onChange={(x) => set('title', x.target.value)} aria-invalid={!!e.title} /><Err msg={e.title} /></Field>
-              <Field label="Description" className="md:col-span-2"><textarea rows={4} className="field resize-y" value={d.description} onChange={(x) => set('description', x.target.value)} aria-invalid={!!e.description} /><Err msg={e.description} /></Field>
+              <Field label="Product name" className="md:col-span-2"><input className="field" value={d.name} onChange={(x) => set('name', x.target.value)} aria-invalid={!!e.name} /><Err msg={e.name} /></Field>
+              <Field label="Brand"><input className="field" value={d.brand} onChange={(x) => set('brand', x.target.value)} /><Err msg={e.brand} /></Field>
+              <Field label="SKU"><input className="field uppercase tabular-nums" value={d.sku} onChange={(x) => set('sku', x.target.value)} aria-invalid={!!e.sku} /><Err msg={e.sku} /></Field>
               <Field label="Category">
-                <select className="field" value={d.category} onChange={(x) => set('category', x.target.value as CategorySlug)} aria-invalid={!!e.category}>
-                  {categories.map((c) => (
-                    <option key={c.slug} value={c.slug}>{c.name}{c.reviewLevel === 'enhanced' ? ' — enhanced review' : ''}</option>
-                  ))}
+                <select className="field" value={d.category} onChange={(x) => set('category', x.target.value)} aria-invalid={!!e.category}>
+                  {categories.map((c) => <option key={c.slug} value={c.slug}>{c.name}{c.reviewLevel === 'enhanced' ? ' — enhanced review' : ''}</option>)}
                 </select>
                 <Err msg={e.category} />
               </Field>
               <Field label="Price (USD, before tax & shipping)"><input className="field tabular-nums" type="number" min="0" step="0.01" value={d.price} onChange={(x) => set('price', x.target.value)} aria-invalid={!!e.price} /><Err msg={e.price} /></Field>
+              <Field label="UPC / EAN (optional)"><input className="field tabular-nums" inputMode="numeric" value={d.upc} onChange={(x) => set('upc', x.target.value.replace(/\D/g, ''))} aria-invalid={!!e.upc} /><Err msg={e.upc} /></Field>
             </div>
             {cat?.reviewLevel === 'enhanced' && (
               <p className="mt-5 flex items-start gap-3 border-l-2 border-warning bg-warning/[0.07] px-4 py-3 text-xs leading-relaxed text-slate">
-                <span className="eyebrow shrink-0 text-[#9a6a24]">Enhanced</span> {cat.reviewNote}
+                <span className="eyebrow shrink-0 text-[#9a6a24]">Enhanced</span> {cat.reviewNote ?? 'Certificates and a Price-Select sign-off are required before publishing.'}
               </p>
             )}
-            {cat && !supplier.categories.includes(cat.slug) && <p className="mt-3 text-xs text-slate">This category is outside your approved categories and will need approval first.</p>}
           </Section>
 
-          <Section n="02" title="Images">
-            <FilePick label="Product images" hint="JPG or PNG, at least 1600 px on the long edge" accept="image/*" multiple files={d.images.map((f) => f.name)} onChange={(l) => set('images', l ? Array.from(l) : [])} error={e.images} />
-            {previews.length > 0 && (
-              <ul className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
-                {previews.map((src, i) => (
-                  <li key={src} className={cn('relative aspect-square overflow-hidden bg-pearl', i === 0 && 'sel-frame')}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={src} alt={`Preview ${i + 1}: ${d.images[i]?.name}`} className="size-full object-cover" />
-                    {i === 0 && <span className="absolute bottom-1 left-1 bg-ivory/95 px-1.5 py-0.5 meta text-[0.55rem] text-obsidian">Primary</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
+          <Section n="02" title="Description">
+            <div className="grid gap-6">
+              <Field label="Summary (one or two sentences)"><textarea rows={2} maxLength={300} className="field resize-y" value={d.summary} onChange={(x) => set('summary', x.target.value)} aria-invalid={!!e.summary} /><Err msg={e.summary} /></Field>
+              <Field label="Description"><textarea rows={5} className="field resize-y" value={d.description} onChange={(x) => set('description', x.target.value)} aria-invalid={!!e.description} /><Err msg={e.description} /></Field>
+              <fieldset>
+                <legend className="meta text-[0.62rem] text-slate">Specifications</legend>
+                <ul className="mt-3 space-y-2">
+                  {d.specs.map((s, i) => (
+                    <li key={i} className="grid grid-cols-[1fr_2fr_auto] gap-2">
+                      <label><span className="sr-only">Spec {i + 1} label</span><input className="field text-sm" placeholder="Label, e.g. Power" value={s.label} onChange={(x) => set('specs', d.specs.map((y, j) => (j === i ? { ...y, label: x.target.value } : y)))} /></label>
+                      <label><span className="sr-only">Spec {i + 1} value</span><input className="field text-sm" placeholder="Value, e.g. 400 W" value={s.value} onChange={(x) => set('specs', d.specs.map((y, j) => (j === i ? { ...y, value: x.target.value } : y)))} /></label>
+                      <button type="button" aria-label={`Remove spec ${i + 1}`} onClick={() => set('specs', d.specs.filter((_, j) => j !== i))} className="grid size-10 place-items-center text-slate hover:text-danger"><Trash2 className="size-4" strokeWidth={1.4} /></button>
+                    </li>
+                  ))}
+                </ul>
+                <button type="button" onClick={() => set('specs', [...d.specs, { label: '', value: '' }])} disabled={d.specs.length >= 40} className="link-line mt-3 meta text-[0.6rem] text-slate hover:text-obsidian">Add specification</button>
+                <Err msg={e.specs} />
+              </fieldset>
+            </div>
           </Section>
 
-          <Section n="03" title="Logistics">
-            <div className="grid gap-6 md:grid-cols-4">
-              <Field label="Weight (kg)"><input className="field tabular-nums" type="number" min="0" step="0.1" value={d.weight} onChange={(x) => set('weight', x.target.value)} aria-invalid={!!e.weight} /><Err msg={e.weight} /></Field>
-              {(['l', 'w', 'h'] as const).map((k) => (
-                <Field key={k} label={`${{ l: 'Length', w: 'Width', h: 'Height' }[k]} (cm)`}><input className="field tabular-nums" type="number" min="0" value={d[k]} onChange={(x) => set(k, x.target.value)} aria-invalid={!!e.dims && !(Number(d[k]) > 0)} /></Field>
+          <Section n="03" title="Logistics & stock">
+            <div className="grid gap-6 md:grid-cols-3">
+              <Field label="Weight (kg)"><input className="field tabular-nums" type="number" min="0" step="0.1" value={d.weightKg} onChange={(x) => set('weightKg', x.target.value)} aria-invalid={!!e.weightKg} /><Err msg={e.weightKg} /></Field>
+              <Field label="Dimensions" className="md:col-span-2"><input className="field" placeholder="e.g. 172 × 113 × 3 cm" value={d.dimensions} onChange={(x) => set('dimensions', x.target.value)} /><Err msg={e.dimensions} /></Field>
+              <Field label="Handling time (business days)"><input className="field tabular-nums" type="number" min="0" max="120" value={d.handlingDays} onChange={(x) => set('handlingDays', x.target.value)} aria-invalid={!!e.handlingDays} /><Err msg={e.handlingDays} /></Field>
+              <Field label="Delivery estimate"><input className="field" placeholder="e.g. 4–7 business days" value={d.deliveryEstimate} onChange={(x) => set('deliveryEstimate', x.target.value)} /><Err msg={e.deliveryEstimate} /></Field>
+              <Field label="On hand"><input className="field tabular-nums" type="number" min="0" value={d.onHand} onChange={(x) => set('onHand', x.target.value)} aria-invalid={!!e.onHand} /><Err msg={e.onHand} /></Field>
+            </div>
+            <div className="mt-6">
+              <Tick checked={d.madeToOrder} onChange={(v) => set('madeToOrder', v)}>Made to order (sold without stock on hand)</Tick>
+            </div>
+            {product && <p className="mt-3 text-xs text-slate">Reserved by open orders: {product.inventory.reserved}. Available: {product.inventory.available}.</p>}
+          </Section>
+        </fieldset>
+
+        <Section n="04" title="Images">
+          {!product ? (
+            <p className="text-sm text-slate">Create the draft first, then add images.</p>
+          ) : (
+            <>
+              {product.images.length > 0 && (
+                <ul className="mb-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
+                  {product.images.map((im) => (
+                    <li key={im.src} className="relative aspect-square overflow-hidden bg-pearl">
+                      <Image src={im.src} alt={im.alt} fill sizes="120px" className="object-cover" />
+                      <span className="absolute bottom-1 left-1 bg-ivory/95 px-1.5 py-0.5 meta text-[0.5rem] text-obsidian">Published</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {product.stagedImages.length > 0 && (
+                <ul className="mb-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
+                  {product.stagedImages.map((im) => (
+                    <li key={im.assetId} className="relative aspect-square overflow-hidden bg-pearl">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={privateAssetUrl(im.assetId)} alt={im.alt || 'Staged product image'} className="size-full object-cover" />
+                      <span className="absolute inset-x-1 bottom-1 bg-ivory/95 px-1.5 py-0.5 meta text-[0.5rem] leading-tight text-obsidian">Awaiting Price-Select publication</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {attachable && (
+                <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
+                  <Field label="Alt text for next image"><input className="field text-sm" maxLength={200} value={alt} onChange={(x) => setAlt(x.target.value)} placeholder="What the image shows" /></Field>
+                  <FilePick label="Add product images" hint="JPEG, PNG or WebP, up to 10 MB" accept="image/png,image/jpeg,image/webp" multiple files={[]} onUpload={(f, p) => attach({ as: 'image', alt: alt.trim() || d.name }, f, 'product_image', p)} />
+                </div>
+              )}
+            </>
+          )}
+        </Section>
+
+        <Section n="05" title="Compliance documents">
+          {!product ? (
+            <p className="text-sm text-slate">Required documents for {cat?.name ?? 'this category'}: {['Authenticity & new-condition confirmation', ...(cat?.requiredDocuments ?? [])].join(', ')}. Upload them after creating the draft.</p>
+          ) : (
+            <div className="space-y-4">
+              {product.compliance.map((c) => (
+                <div key={c.label} className="border-b border-obsidian/[0.06] pb-4 last:border-0">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span>{c.label}{c.required ? '' : ' (optional)'}</span>
+                    <span className="flex items-center gap-3">
+                      {c.assetId && <a href={privateAssetUrl(c.assetId)} target="_blank" rel="noreferrer" className="link-line text-xs">View file</a>}
+                      <StatusBadge status={c.status} label={c.status.replace('_', ' ')} />
+                    </span>
+                  </div>
+                  {c.reviewedAt && <p className="mb-2 text-xs text-slate">Reviewed {c.reviewedByName ? `by ${c.reviewedByName} ` : ''}{dateTime(c.reviewedAt)}</p>}
+                  {attachable && c.status !== 'on_file' && <FilePick label={c.assetId ? 'Replace file' : 'Upload file'} hint="PDF or image, up to 10 MB" accept=".pdf,image/png,image/jpeg,image/webp" files={[]} onUpload={(f, p) => attach({ as: 'document', label: c.label }, f, 'product_document', p, `${c.label}: ${f.name}`)} />}
+                </div>
               ))}
-            </div>
-            <Err msg={e.dims} />
-            <div className="mt-6 grid gap-6 md:grid-cols-3">
-              <Field label="Availability">
-                <select className="field" value={d.availability} onChange={(x) => set('availability', x.target.value as StockStatus)}>
-                  {(Object.keys(STOCK_LABEL) as StockStatus[]).map((s) => <option key={s} value={s}>{STOCK_LABEL[s]}</option>)}
-                </select>
-              </Field>
-              <Field label="Quantity available"><input className="field tabular-nums" type="number" min="0" value={d.qty} onChange={(x) => set('qty', x.target.value)} aria-invalid={!!e.qty} disabled={d.availability === 'made_to_order' || d.availability === 'out_of_stock'} /><Err msg={e.qty} /></Field>
-              <Field label="Handling time (business days)"><input className="field tabular-nums" type="number" min="0" value={d.handling} onChange={(x) => set('handling', x.target.value)} aria-invalid={!!e.handling} /><Err msg={e.handling} /></Field>
-            </div>
-            <fieldset className="mt-8">
-              <legend className="meta text-[0.62rem] text-slate">Shipping options</legend>
-              <div className="mt-2 grid gap-1 sm:grid-cols-2">
-                {SHIPPING.map((o) => (
-                  <Tick key={o} checked={d.shipping.includes(o)} onChange={(v) => set('shipping', v ? [...d.shipping, o] : d.shipping.filter((x) => x !== o))}>{o}</Tick>
-                ))}
+              <div className="pt-2">
+                <p className="mb-2 text-sm">Supporting documents <span className="text-slate">(manuals, warranty terms — optional)</span></p>
+                {attachable ? (
+                  <FilePick label="Add supporting documents" accept=".pdf,image/png,image/jpeg,image/webp" multiple files={product.supportingDocs.map((id, i) => ({ id, name: `Document ${i + 1}`, href: privateAssetUrl(id) }))} onUpload={(f, p) => attach({ as: 'supporting' }, f, 'product_document', p, f.name)} />
+                ) : (
+                  <ul className="space-y-1 text-xs">{product.supportingDocs.map((id, i) => <li key={id}><a href={privateAssetUrl(id)} target="_blank" rel="noreferrer" className="link-line">Document {i + 1}</a></li>)}</ul>
+                )}
               </div>
-              <Err msg={e.shipping} />
-            </fieldset>
-          </Section>
-
-          <Section n="04" title="Compliance">
-            <FilePick label={`Compliance documents${cat?.reviewLevel === 'enhanced' ? '' : ' (optional)'}`} hint="Certificates, manuals, warranty terms — PDF" accept=".pdf,image/*" multiple files={d.docs} onChange={(l) => set('docs', l ? Array.from(l).map((f) => f.name) : [])} error={e.docs} />
-            <div className="mt-6 border-t border-obsidian/10 pt-6">
-              <Tick checked={d.authentic} onChange={(v) => set('authentic', v)} error={e.authentic}>
-                <span className="inline-flex items-start gap-2"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-gold-deep" strokeWidth={1.4} aria-hidden /> I confirm this product is authentic and new, and the information above is accurate.</span>
-              </Tick>
             </div>
+          )}
+        </Section>
+
+        {product && product.reviewHistory.length > 0 && (
+          <Section n="06" title="Review history">
+            <ol className="space-y-2">
+              {[...product.reviewHistory].reverse().map((h, i) => (
+                <li key={h.at + i} className="grid grid-cols-[10rem_1fr] gap-4 text-sm">
+                  <span className="text-xs tabular-nums text-slate">{dateTime(h.at)}</span>
+                  <span>
+                    {h.action.replace(/_/g, ' ')}
+                    {h.byName && <span className="text-slate"> · {h.byName}</span>}
+                    {h.reason && <span className="block text-xs text-slate">{h.reason}</span>}
+                  </span>
+                </li>
+              ))}
+            </ol>
           </Section>
-          <button type="submit" className="sr-only">Submit for review</button>
-        </form>
-      )}
+        )}
+      </form>
     </Drawer>
   )
 }

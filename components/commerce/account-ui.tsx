@@ -49,6 +49,8 @@ export function AccountNav() {
 }
 
 const TONE: Record<string, string> = {
+  awaiting_payment: 'bg-warning',
+  partially_shipped: 'bg-gold',
   pending: 'bg-mist',
   confirmed: 'bg-ocean',
   processing: 'bg-warning',
@@ -76,6 +78,8 @@ export function Status({ value, light, className }: { value: OrderStatus | CaseS
 
 const FLOW: OrderStatus[] = ['pending', 'confirmed', 'processing', 'shipped', 'delivered']
 const FLOW_LABEL: Record<OrderStatus, string> = {
+  awaiting_payment: 'Awaiting payment',
+  partially_shipped: 'Partially shipped',
   pending: 'Order placed',
   confirmed: 'Confirmed by supplier',
   processing: 'Processing',

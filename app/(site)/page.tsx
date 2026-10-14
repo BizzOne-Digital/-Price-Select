@@ -7,8 +7,8 @@ import { CategoryShowcase } from '@/components/commerce/category-showcase'
 import { ProductCard } from '@/components/commerce/product-card'
 import { ImageReveal, LineReveal, Parallax, Reveal, ScrollMarquee, SplitText, Stagger, StaggerItem } from '@/components/motion/primitives'
 import { ButtonLink, DemoNote, Eyebrow, SectionHeading, TextLink } from '@/components/site/ui'
-import { featuredProducts, seasonalProducts } from '@/lib/data/products'
-import { categoryName } from '@/lib/data/categories'
+import { featuredProducts, listCategories, seasonalProducts } from '@/lib/server/services/catalog'
+import { getSiteContent } from '@/lib/server/services/settings'
 import { IMAGES } from '@/lib/img'
 import { money } from '@/lib/format'
 import { SERVICE_TARGETS } from '@/lib/site'
@@ -18,11 +18,14 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 }
 
-export default function Home() {
-  const [lead, ...rest] = featuredProducts
+export default async function Home() {
+  // A database outage degrades to the static story sections rather than an error page.
+  const [featured, seasonal, categories, content] = await Promise.all([featuredProducts().catch(() => []), seasonalProducts().catch(() => []), listCategories().catch(() => []), getSiteContent()])
+  const [lead, ...rest] = featured
+  const categoryName = (slug: string) => categories.find((c) => c.slug === slug)?.name ?? ''
   return (
     <>
-      <Hero />
+      <Hero headline={content.homeHeadline} />
 
       {/* 01 — Brand philosophy */}
       <section id="premise" className="section-y relative bg-ivory">
@@ -99,6 +102,9 @@ export default function Home() {
               </div>
             }
           />
+          {!lead ? (
+            <p className="mt-20 max-w-md text-sm leading-relaxed text-slate">The selection is being prepared. Products appear here as approved suppliers publish them.</p>
+          ) : (
           <div className="mt-20 grid grid-cols-2 gap-x-4 gap-y-16 md:gap-x-6 lg:grid-cols-12 lg:gap-x-8 lg:gap-y-24">
             <div className="col-span-2 lg:col-span-7">
               <ProductCard product={lead} aspect="aspect-[4/5] lg:aspect-[6/5]" sizes="(min-width: 1024px) 58vw, 100vw" />
@@ -109,7 +115,8 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <DemoNote className="mt-16">Demonstration products and sample pricing. Live inventory will be connected from approved suppliers.</DemoNote>
+          )}
+          <p className="mt-16 text-xs text-slate">{content.pricingNotice}</p>
         </div>
       </section>
 
@@ -119,7 +126,8 @@ export default function Home() {
         <CategoryShowcase />
       </section>
 
-      {/* 05 — Seasonal: Buy summer in winter. Save. */}
+      {/* 05 — Seasonal campaign (shown only while one is active) */}
+      {seasonal.length > 0 && (
       <section className="section-y relative overflow-hidden bg-ivory" aria-labelledby="offer-title">
         <div className="container-luxe">
           <div className="grid gap-12 lg:grid-cols-12">
@@ -127,11 +135,13 @@ export default function Home() {
               <Reveal>
                 <Eyebrow index="04">Seasonal selection</Eyebrow>
               </Reveal>
-              <h2 id="offer-title" className="sr-only">Buy summer in winter. Save.</h2>
-              <SplitText as="p" text={'Buy summer\nin winter.\nSave.'} italicWords={['Save']} className="mt-10 text-display-2 text-obsidian" />
-              <Reveal delay={0.2} className="mt-10 max-w-sm text-base leading-relaxed text-slate">
-                Price-Select, just for you: three to four products chosen for the season ahead, at special off-season pricing for a limited window. The edit changes with each season.
-              </Reveal>
+              <h2 id="offer-title" className="sr-only">{content.campaignHeadline}</h2>
+              <SplitText as="p" text={content.campaignHeadline.replace(/\.\s+/g, '.\n')} italicWords={['Save']} className="mt-10 text-display-2 text-obsidian" />
+              {content.campaignDescription && (
+                <Reveal delay={0.2} className="mt-10 max-w-sm text-base leading-relaxed text-slate">
+                  {content.campaignDescription}
+                </Reveal>
+              )}
               <Reveal delay={0.3} className="mt-10">
                 <ButtonLink href="/shop?seasonal=1" variant="dark">
                   Explore the offer
@@ -151,7 +161,7 @@ export default function Home() {
                 <div className="absolute inset-x-0 bottom-0 p-6 text-obsidian md:p-10">
                   <p className="eyebrow text-teal">The seasonal edit</p>
                   <ul className="mt-5">
-                    {seasonalProducts.map((p) => (
+                    {seasonal.map((p) => (
                       <li key={p.slug} className="border-t border-obsidian/15">
                         <Link href={`/products/${p.slug}`} className="group flex items-baseline justify-between gap-4 py-3.5" data-cursor="View">
                           <span className="min-w-0">
@@ -165,13 +175,13 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
-                  <DemoNote light className="mt-5">Sample seasonal pricing</DemoNote>
                 </div>
               </ImageReveal>
             </div>
           </div>
         </div>
       </section>
+      )}
 
       {/* 06 — Marketplace / supplier story (horizontal) */}
       <MarketplaceStory />

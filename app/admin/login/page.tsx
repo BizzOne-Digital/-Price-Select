@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { Wordmark } from '@/components/site/header'
 import { adminMeta } from '@/components/admin/data'
 import { AdminLoginForm } from '@/components/admin/login-form'
@@ -37,11 +38,13 @@ export default function AdminLogin() {
             <div className="sel-frame border border-obsidian/10 bg-ivory/95 p-7 md:p-10">
               <h2 className="font-display text-3xl font-light">Sign in</h2>
               <p className="mt-2 mb-8 text-xs text-obsidian/45">Restricted to Price-Select staff.</p>
-              <AdminLoginForm />
+              <Suspense>
+                <AdminLoginForm />
+              </Suspense>
             </div>
             <p className="mt-6 flex items-start gap-3 meta text-[0.6rem] leading-relaxed text-obsidian/40">
               <span className="mt-1 size-1.5 shrink-0 rounded-full bg-champagne/70" aria-hidden />
-              Demo sign-in — authentication provider not yet connected. No credentials are checked or stored.
+              Your access level comes from your staff account. Accounts are issued by a Price-Select administrator.
             </p>
           </div>
         </div>

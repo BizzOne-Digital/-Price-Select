@@ -7,8 +7,9 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring } fr
 import { ChevronDown, Search, ShoppingBag, UserRound, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { NAV, SIGN_IN, SITE } from '@/lib/site'
-import { categories } from '@/lib/data/categories'
-import { publishedProducts } from '@/lib/data/products'
+import { api } from '@/lib/client/api'
+import type { Product, Role } from '@/lib/types'
+import { useSite, type SessionLite } from '@/components/commerce/site-context'
 import { money } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useCart } from '@/components/commerce/cart'
@@ -18,7 +19,27 @@ export function Wordmark({ className }: { className?: string }) {
   return <Image src="/pricelogo.png" alt="Price-Select" width={1672} height={941} priority className={cn('h-12 w-auto rounded-sm md:h-14', className)} />
 }
 
+const HOME: Record<Role, string> = { customer: '/account', admin: '/admin', support: '/admin', supplier: '/supplier' }
+
+/** Account links for the signed-in visitor, or the portal sign-in links. */
+function useAccountLinks(session: SessionLite) {
+  const router = useRouter()
+  const [out, setOut] = useState(false)
+  const signOut = async () => {
+    setOut(true)
+    try {
+      await api('/api/session/sign-out', { method: 'POST' })
+    } catch {}
+    setOut(false)
+    router.push('/')
+    router.refresh()
+  }
+  return { links: session ? [{ href: HOME[session.role], label: session.role === 'customer' ? 'Your account' : 'Workspace' }] : SIGN_IN, signOut, out }
+}
+
 export function Header() {
+  const { session } = useSite()
+  const acct = useAccountLinks(session)
   const pathname = usePathname()
   const { scrollY, scrollYProgress } = useScroll()
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30 })
@@ -81,7 +102,7 @@ export function Header() {
                   onKeyDown={(e) => e.key === 'Escape' && setSignIn(false)}
                   className={cn('flex items-center gap-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.18em] transition-colors', active('/sign-in') ? 'text-teal' : 'text-obsidian/80 hover:text-teal')}
                 >
-                  Sign In <ChevronDown className={cn('size-3 transition-transform duration-300', signIn && 'rotate-180')} strokeWidth={1.5} aria-hidden />
+                  {session ? session.name.split(' ')[0] || 'Account' : 'Sign In'} <ChevronDown className={cn('size-3 transition-transform duration-300', signIn && 'rotate-180')} strokeWidth={1.5} aria-hidden />
                 </button>
                 <AnimatePresence>
                   {signIn && (
@@ -93,13 +114,20 @@ export function Header() {
                       transition={{ duration: 0.25, ease: EASE }}
                       className="absolute -left-5 top-full mt-3 min-w-48 border border-obsidian/10 bg-ivory/95 py-2 backdrop-blur-md before:absolute before:inset-x-0 before:-top-4 before:h-4"
                     >
-                      {SIGN_IN.map((s) => (
+                      {acct.links.map((s) => (
                         <li key={s.href}>
                           <Link href={s.href} className="block px-5 py-3 text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-obsidian/75 transition-colors hover:text-teal focus-visible:text-teal">
                             {s.label}
                           </Link>
                         </li>
                       ))}
+                      {session && (
+                        <li>
+                          <button type="button" onClick={acct.signOut} disabled={acct.out} className="block w-full px-5 py-3 text-left text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-obsidian/75 transition-colors hover:text-teal focus-visible:text-teal disabled:opacity-50">
+                            {acct.out ? 'Signing out…' : 'Sign out'}
+                          </button>
+                        </li>
+                      )}
                     </motion.ul>
                   )}
                 </AnimatePresence>
@@ -111,7 +139,7 @@ export function Header() {
             <IconBtn label="Search" onClick={() => setSearch(true)}>
               <Search className="size-[18px]" strokeWidth={1.3} />
             </IconBtn>
-            <IconBtn label="Account" href="/account" className="hidden sm:grid">
+            <IconBtn label={session ? `Account, signed in as ${session.name}` : 'Account'} href={session ? HOME[session.role] : '/account'} className="hidden sm:grid">
               <UserRound className="size-[18px]" strokeWidth={1.3} />
             </IconBtn>
             <IconBtn label={`Cart, ${count} item${count === 1 ? '' : 's'}`} onClick={() => setOpen(true)}>
@@ -144,7 +172,7 @@ export function Header() {
         <div aria-hidden className={cn('absolute inset-x-0 bottom-0 h-px bg-obsidian/10 transition-opacity', solid ? 'opacity-100' : 'opacity-60')} />
       </motion.header>
 
-      <MobileMenu open={menu} active={active} />
+      <MobileMenu open={menu} active={active} acct={acct} signedIn={!!session} />
       <SearchOverlay open={search} onClose={() => setSearch(false)} />
     </>
   )
@@ -163,7 +191,8 @@ function IconBtn({ label, children, onClick, href, className }: { label: string;
   )
 }
 
-function MobileMenu({ open, active }: { open: boolean; active: (h: string) => boolean }) {
+function MobileMenu({ open, active, acct, signedIn }: { open: boolean; active: (h: string) => boolean; acct: ReturnType<typeof useAccountLinks>; signedIn: boolean }) {
+  const { categories } = useSite()
   return (
     <AnimatePresence>
       {open && (
@@ -191,20 +220,24 @@ function MobileMenu({ open, active }: { open: boolean; active: (h: string) => bo
               ))}
             </ul>
             <motion.div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-3 pb-10" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
-              <p className="eyebrow col-span-2 mb-2 text-teal">Sign In</p>
-              {SIGN_IN.map((s) => (
+              <p className="eyebrow col-span-2 mb-2 text-teal">{signedIn ? 'Account' : 'Sign In'}</p>
+              {acct.links.map((s) => (
                 <Link key={s.href} href={s.href} className="py-1 text-sm text-obsidian/80">
                   {s.label}
                 </Link>
               ))}
+              {signedIn && (
+                <button type="button" onClick={acct.signOut} disabled={acct.out} className="py-1 text-left text-sm text-obsidian/80 disabled:opacity-50">
+                  {acct.out ? 'Signing out…' : 'Sign out'}
+                </button>
+              )}
               <p className="eyebrow col-span-2 mb-2 mt-6 text-teal">Departments</p>
               {categories.map((c) => (
                 <Link key={c.slug} href={`/categories/${c.slug}`} className="py-1 text-sm text-obsidian/70">
                   {c.short}
                 </Link>
               ))}
-              <Link href="/account" className="col-span-2 mt-6 eyebrow text-obsidian/80">Account →</Link>
-              <a href={`mailto:${SITE.email}`} className="col-span-2 text-sm text-obsidian/60 break-all">{SITE.email}</a>
+                            <a href={`mailto:${SITE.email}`} className="col-span-2 text-sm text-obsidian/60 break-all">{SITE.email}</a>
             </motion.div>
           </nav>
         </motion.div>
@@ -230,10 +263,30 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
     }
   }, [open, onClose])
 
+  const { categories } = useSite()
+  const [hits, setHits] = useState<Product[]>([])
+  const [loading, setLoading] = useState(false)
   const term = q.trim().toLowerCase()
-  const hits = term
-    ? publishedProducts.filter((p) => [p.name, p.brand, p.summary, p.category].join(' ').toLowerCase().includes(term)).slice(0, 6)
-    : []
+
+  // Debounced server search; stale responses are aborted.
+  useEffect(() => {
+    if (!term) {
+      setHits([])
+      return
+    }
+    const ctl = new AbortController()
+    setLoading(true)
+    const t = setTimeout(() => {
+      api<{ items: Product[] }>(`/api/products?q=${encodeURIComponent(term)}&pageSize=6`, { signal: ctl.signal })
+        .then((r) => setHits(r.items))
+        .catch(() => !ctl.signal.aborted && setHits([]))
+        .finally(() => !ctl.signal.aborted && setLoading(false))
+    }, 250)
+    return () => {
+      clearTimeout(t)
+      ctl.abort()
+    }
+  }, [term])
   const cats = term ? categories.filter((c) => (c.name + c.description).toLowerCase().includes(term)).slice(0, 4) : categories.slice(0, 4)
 
   return (
@@ -284,7 +337,7 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
 
             <div className="mt-14 grid gap-14 pb-20 md:grid-cols-12">
               <div className="md:col-span-7">
-                <p className="eyebrow text-obsidian/45">{term ? `${hits.length} product${hits.length === 1 ? '' : 's'}` : 'Begin typing to search'}</p>
+                <p className="eyebrow text-obsidian/45">{!term ? 'Begin typing to search' : loading ? 'Searching…' : `${hits.length} product${hits.length === 1 ? '' : 's'}`}</p>
                 <ul className="mt-6">
                   {hits.map((p, i) => (
                     <motion.li key={p.slug} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04, ease: EASE }} className="border-b border-obsidian/10">
@@ -293,7 +346,7 @@ function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }
                           <span className="block text-base group-hover:text-teal">{p.name}</span>
                           <span className="meta text-obsidian/40">{p.brand}</span>
                         </span>
-                        <span className="text-sm tabular-nums text-obsidian/70">{money(p.price)}</span>
+                        <span className="text-sm tabular-nums text-obsidian/70">{money(p.seasonalPrice ?? p.price)}</span>
                       </Link>
                     </motion.li>
                   ))}

@@ -1,34 +1,30 @@
 'use client'
 
-import { BarChart3, Boxes, LayoutGrid, Package, RotateCcw, Truck } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { BarChart3, Boxes, LayoutGrid, LogOut, Package, RotateCcw, Truck } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useState, type ReactNode } from 'react'
+import type { Notification } from '@/lib/types'
 import { DashboardShell } from '@/components/dashboard/shell'
-import { myCases, myFulfillments, supplier, supplierNotifications } from './data'
+import { api, errorText } from '@/lib/client/api'
 
-const initials = supplier.name.split(/\s+/).filter((w) => /^[A-Z]/.test(w)).slice(0, 2).map((w) => w[0]).join('')
+const initialsOf = (s: string) => s.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('')
 
 /** Client wrapper so the server layout never has to pass icon components across the boundary. */
-export function SupplierShell({ children }: { children: ReactNode }) {
-  const pending = myFulfillments.filter((f) => ['pending', 'confirmed', 'processing'].includes(f.fulfillment.status)).length
-  const openCases = myCases.filter((c) => ['open', 'awaiting_supplier', 'escalated'].includes(c.status)).length
+export function SupplierShell({ user, notifications, badges, limited, children }: { user: { name: string; company: string }; notifications: Notification[]; badges?: { orders: number; returns: number }; limited?: boolean; children: ReactNode }) {
+  const items = [
+    { href: '/supplier', label: 'Overview', icon: LayoutGrid },
+    ...(limited
+      ? []
+      : [
+          { href: '/supplier/products', label: 'Products', icon: Package },
+          { href: '/supplier/orders', label: 'Orders', icon: Truck, badge: badges?.orders },
+          { href: '/supplier/inventory', label: 'Inventory', icon: Boxes },
+          { href: '/supplier/returns', label: 'Returns', icon: RotateCcw, badge: badges?.returns },
+          { href: '/supplier/performance', label: 'Performance', icon: BarChart3 },
+        ]),
+  ]
   return (
-    <DashboardShell
-      product="Supplier portal"
-      user={{ name: supplier.name, role: 'Supplier · demo account', initials }}
-      notifications={supplierNotifications}
-      nav={[
-        {
-          items: [
-            { href: '/supplier', label: 'Overview', icon: LayoutGrid },
-            { href: '/supplier/products', label: 'Products', icon: Package },
-            { href: '/supplier/orders', label: 'Orders', icon: Truck, badge: pending },
-            { href: '/supplier/inventory', label: 'Inventory', icon: Boxes },
-            { href: '/supplier/returns', label: 'Returns', icon: RotateCcw, badge: openCases },
-            { href: '/supplier/performance', label: 'Performance', icon: BarChart3 },
-          ],
-        },
-      ]}
-    >
+    <DashboardShell product="Supplier portal" user={{ name: user.company, role: user.name, initials: initialsOf(user.company) }} notifications={notifications} nav={[{ items }]} signOutTo="/supplier/login">
       {children}
     </DashboardShell>
   )

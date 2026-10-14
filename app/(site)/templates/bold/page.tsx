@@ -6,12 +6,15 @@ import { Reveal, ScrollMarquee, Stagger, StaggerItem } from '@/components/motion
 import { ButtonLink, Eyebrow, TextLink } from '@/components/site/ui'
 import { ProductCard } from '@/components/commerce/product-card'
 import { PlanCards, SavingsEstimator } from '@/components/templates/blocks'
-import { categories } from '@/lib/data/categories'
-import { featuredProducts, productsIn } from '@/lib/data/products'
+import { featuredProducts, listCategories } from '@/lib/server/services/catalog'
 
 export const metadata: Metadata = { title: 'Template C · Bold Savings' }
 
-export default function BoldTemplate() {
+export const dynamic = 'force-dynamic'
+
+export default async function BoldTemplate() {
+  // Design preview built on the public catalog (published listings only); empty sections hide gracefully.
+  const [categories, featured] = await Promise.all([listCategories().catch(() => []), featuredProducts().catch(() => [])])
   return (
     <div className="bg-ivory text-obsidian">
       {/* Typographic hero */}
@@ -93,10 +96,10 @@ export default function BoldTemplate() {
               <StaggerItem as="li" key={c.slug} className="border-b border-obsidian/15">
                 <Link href={`/categories/${c.slug}`} className="group grid grid-cols-[4.5rem_1fr_auto] items-center gap-5 py-5 md:grid-cols-[7rem_1fr_auto_auto] md:gap-8">
                   <span className="relative block aspect-square overflow-hidden">
-                    <Image src={c.image} alt="" aria-hidden fill sizes="112px" className="object-cover grayscale transition duration-700 group-hover:scale-110 group-hover:grayscale-0" />
+                    <Image src={c.image || '/placeholder.svg'} alt="" aria-hidden fill sizes="112px" className="object-cover grayscale transition duration-700 group-hover:scale-110 group-hover:grayscale-0" />
                   </span>
                   <span className="text-[clamp(1.4rem,3vw,2.6rem)] font-extrabold uppercase leading-none tracking-[-0.03em] transition-colors group-hover:text-teal">{c.name}</span>
-                  <span className="meta hidden text-obsidian/45 md:block">{productsIn(c.slug).length} products</span>
+                  <span className="meta hidden text-obsidian/45 md:block">{(c.count ?? 0)} products</span>
                   <ArrowUpRight className="size-6 text-teal transition-transform duration-500 group-hover:-translate-y-1 group-hover:translate-x-1" strokeWidth={1.3} aria-hidden />
                 </Link>
               </StaggerItem>
@@ -118,7 +121,7 @@ export default function BoldTemplate() {
             </TextLink>
           </div>
           <div className="mt-14 grid grid-cols-2 gap-x-5 gap-y-12 lg:grid-cols-4">
-            {featuredProducts.slice(0, 8).map((p, i) => (
+            {featured.slice(0, 8).map((p, i) => (
               <ProductCard key={p.slug} product={p} index={i} dark />
             ))}
           </div>

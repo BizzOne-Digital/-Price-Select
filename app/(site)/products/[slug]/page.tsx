@@ -2,8 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Clock, PackageCheck, RotateCcw, ShieldCheck, Truck } from 'lucide-react'
-import { getCategory } from '@/lib/data/categories'
-import { getProduct, products, productsIn, STOCK_LABEL } from '@/lib/data/products'
+import { cache } from 'react'
+import { STOCK_LABEL } from '@/lib/labels'
+import { currentActor } from '@/lib/server/page-auth'
+import { getCategory, getProductPreview, getPublicProduct, relatedProducts } from '@/lib/server/services/catalog'
+import { savedIds } from '@/lib/server/services/customers'
 import { money } from '@/lib/format'
 import { SITE } from '@/lib/site'
 import type { Product } from '@/lib/types'
@@ -11,12 +14,22 @@ import { cn } from '@/lib/utils'
 import { Accordion, BuyBox, ProductGallery } from '@/components/commerce/product-detail'
 import { ProductCard } from '@/components/commerce/product-card'
 import { Reveal } from '@/components/motion/primitives'
-import { Breadcrumbs, DemoNote, Eyebrow, JsonLd, TextLink } from '@/components/site/ui'
+import { Breadcrumbs, Eyebrow, JsonLd, TextLink } from '@/components/site/ui'
 
-export const generateStaticParams = () => products.map((p) => ({ slug: p.slug }))
+export const dynamic = 'force-dynamic'
+
+/**
+ * Published listing, or an authorized preview (staff, or the owning supplier) of any other state.
+ * Everyone else gets a 404 — unpublished listings are never exposed by noindex alone.
+ */
+const load = cache(async (slug: string) => {
+  const pub = await getPublicProduct(slug)
+  if (pub) return pub
+  return getProductPreview(slug, await currentActor())
+})
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const p = getProduct((await params).slug)
+  const p = await load((await params).slug).catch(() => null)
   if (!p) return {}
   return {
     title: p.name,
@@ -24,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     alternates: { canonical: `/products/${p.slug}` },
     // Unpublished listings render for review links but stay out of search.
     robots: p.status === 'published' ? undefined : { index: false, follow: false },
-    openGraph: { title: `${p.name} · Price-Select`, description: p.summary, images: [{ url: p.images[0].src, alt: p.images[0].alt }] },
+    openGraph: { title: `${p.name} · Price-Select`, description: p.summary, images: p.images[0]?.src ? [{ url: p.images[0].src, alt: p.images[0].alt }] : undefined },
   }
 }
 
@@ -34,21 +47,27 @@ const AVAILABILITY: Record<Product['stock'], string> = {
   made_to_order: 'https://schema.org/MadeToOrder',
   out_of_stock: 'https://schema.org/OutOfStock',
 }
-const DOC_STATUS = { on_file: ['On file', 'bg-success'], pending: ['Pending review', 'bg-warning'], required: ['Required', 'bg-danger'] } as const
+const DOC_STATUS = { on_file: ['On file', 'bg-success'], pending: ['Pending review', 'bg-warning'], required: ['Required', 'bg-danger'], rejected: ['Not accepted', 'bg-danger'] } as const
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  const p = getProduct((await params).slug)
+  const p = await load((await params).slug)
   if (!p) notFound()
-  const cat = getCategory(p.category)!
   const live = p.status === 'published'
+  const actor = live ? await currentActor() : null
+  const [found, related, saved] = await Promise.all([
+    getCategory(p.category),
+    live ? relatedProducts(p.slug, p.category) : Promise.resolve([]),
+    actor?.role === 'customer' ? savedIds(actor).then((ids) => ids.includes(p.id)) : Promise.resolve(false),
+  ])
+  // Previews can belong to an inactive department.
+  const cat = found ?? { slug: p.category, name: p.category, short: p.category, reviewLevel: 'standard' as const, reviewNote: undefined }
   const price = p.seasonalPrice ?? p.price
-  const related = productsIn(p.category).filter((x) => x.slug !== p.slug).slice(0, 4)
 
   const facts: [string, string][] = [
     ['SKU', p.sku],
     ...(p.upc ? [['UPC', p.upc] as [string, string]] : []),
-    ['Weight', `${p.weightKg} kg`],
-    ['Dimensions', p.dimensions],
+    ...(p.weightKg ? [['Weight', `${p.weightKg} kg`] as [string, string]] : []),
+    ...(p.dimensions ? [['Dimensions', p.dimensions] as [string, string]] : []),
   ]
 
   return (
@@ -64,8 +83,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             brand: { '@type': 'Brand', name: p.brand },
             category: cat.name,
             description: p.description,
-            image: p.images.map((i) => i.src),
-            weight: { '@type': 'QuantitativeValue', value: p.weightKg, unitCode: 'KGM' },
+            image: p.images.map((i) => (i.src.startsWith('/') ? `${SITE.url}${i.src}` : i.src)),
+            ...(p.weightKg ? { weight: { '@type': 'QuantitativeValue', value: p.weightKg, unitCode: 'KGM' } } : {}),
             offers: {
               '@type': 'Offer',
               url: `${SITE.url}/products/${p.slug}`,
@@ -93,8 +112,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           {!live && (
             <div role="status" className="mb-8 flex flex-wrap items-center gap-x-4 gap-y-2 border border-warning/40 bg-warning/10 px-5 py-4 text-sm">
-              <span className="eyebrow text-warning">Under review</span>
-              <span className="text-obsidian/80">Not yet available to order. This listing is awaiting compliance review before it can be published.</span>
+              <span className="eyebrow text-warning">Preview · {p.status.replace('_', ' ')}</span>
+              <span className="text-obsidian/80">Visible only to you. This listing is not published and cannot be ordered.</span>
             </div>
           )}
 
@@ -160,7 +179,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </Reveal>
 
                 <Reveal delay={0.3} className="mt-8">
-                  <BuyBox product={p} />
+                  <BuyBox product={p} saved={saved} />
                 </Reveal>
 
                 <Reveal delay={0.35} className="mt-8 grid gap-4 border-y border-obsidian/12 py-6 text-sm text-obsidian/75">
@@ -259,14 +278,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </div>
               ))}
             </dl>
-            <DemoNote  className="mt-8">
-              Demonstration product and sample pricing
-            </DemoNote>
             </div>
           </div>
         </div>
       </section>
 
+      {live && (
       <section className="section-y bg-ivory" aria-labelledby="related-title">
         <div className="container-luxe">
           <div className="flex flex-wrap items-end justify-between gap-6">
@@ -295,6 +312,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           )}
         </div>
       </section>
+      )}
     </>
   )
 }

@@ -2,46 +2,53 @@
 
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
-import { DataTable, DemoBanner, MetricCard, MetricGrid, PageHeader, Panel, StatusBadge } from '@/components/dashboard/kit'
+import type { ProductStatus, Supplier, SupplierFulfillment } from '@/lib/types'
+import { DataTable, MetricCard, MetricGrid, PageHeader, Panel, StatusBadge } from '@/components/dashboard/kit'
 import { money } from '@/lib/format'
-import { getProduct } from '@/lib/data/products'
 import { cn } from '@/lib/utils'
-import { DEMO_NOW, TARGET_HOURS, hoursBetween, myCases, myFulfillments, myProducts, supplier, type MyFulfillment } from './data'
+import { hoursBetween, targetText, type Targets } from './data'
+import type { AckDeadlines } from './server'
 import { LinkButton, dateTime, dur } from './ui'
 
-const ackHours = (f: MyFulfillment['fulfillment']) => {
-  const placed = f.history[0]?.at
-  const ack = f.history.find((h) => h.status === 'confirmed')?.at
-  return placed && ack ? hoursBetween(placed, ack) : null
-}
+export type Action = { key: string; title: string; detail: string; href: string; start: string; due: string; targetLabel: string }
 
 const units = (n: number) => `${n} unit${n === 1 ? '' : 's'}`
 
-type Action = { key: string; title: string; detail: string; href: string; elapsed: number; target: number; targetLabel: string }
-
-export function SupplierOverview() {
-  const active = myFulfillments.filter((f) => ['pending', 'confirmed', 'processing'].includes(f.fulfillment.status))
-  const shipped = myFulfillments.filter((f) => ['shipped', 'delivered'].includes(f.fulfillment.status))
-  const openCases = myCases.filter((c) => ['open', 'awaiting_supplier', 'escalated'].includes(c.status))
-  const stockUnits = myProducts.reduce((s, p) => s + p.stockQty, 0)
-
-  const actions: Action[] = [
-    ...myFulfillments
-      .filter((f) => f.fulfillment.status === 'pending')
-      .map((f) => ({ key: f.fulfillment.id, title: `Acknowledge ${f.fulfillment.id}`, detail: `${f.fulfillment.lines.length} line(s) · ship to ${f.shipTo.city}, ${f.shipTo.region}`, href: '/supplier/orders', elapsed: hoursBetween(f.placedAt, DEMO_NOW), target: TARGET_HOURS.acknowledgment, targetLabel: 'Acknowledge within 1 business day' })),
-    ...myFulfillments
-      .filter((f) => ['confirmed', 'processing', 'shipped'].includes(f.fulfillment.status) && !f.fulfillment.tracking)
-      .map((f) => {
-        const since = [...f.fulfillment.history].reverse()[0]?.at ?? f.placedAt
-        const detail = f.fulfillment.lines.map((l) => l.name).join(', ')
-        if (f.fulfillment.status === 'shipped') return { key: f.fulfillment.id, title: `Missing tracking · ${f.fulfillment.id}`, detail, href: '/supplier/orders', elapsed: hoursBetween(since, DEMO_NOW), target: TARGET_HOURS.tracking, targetLabel: 'Tracking within 24 h of dispatch' }
-        const days = Math.max(...f.fulfillment.lines.map((l) => getProduct(l.productSlug)?.handlingDays ?? 2))
-        return { key: f.fulfillment.id, title: `Dispatch & add tracking · ${f.fulfillment.id}`, detail, href: '/supplier/orders', elapsed: hoursBetween(since, DEMO_NOW), target: days * 24, targetLabel: `Dispatch within handling time (${days} days)` }
-      }),
-    ...openCases.map((c) => ({ key: c.id, title: `Respond to ${c.id}`, detail: `${c.type === 'damage' ? 'Damage report' : c.type === 'cancellation' ? 'Cancellation request' : 'Case'} — ${c.reason}`, href: '/supplier/returns', elapsed: hoursBetween(c.openedAt, DEMO_NOW), target: TARGET_HOURS.response, targetLabel: 'Respond within 1 business day' })),
-  ].sort((a, b) => b.elapsed / b.target - a.elapsed / a.target)
-
-  const feedAge = hoursBetween(supplier.feed.lastSync, DEMO_NOW)
+export function SupplierOverview({
+  supplier,
+  asOf,
+  dash,
+  fulfillments,
+  ack,
+  products,
+  cases,
+  actions,
+  targets,
+  feedDue,
+}: {
+  supplier: Pick<Supplier, 'name' | 'integration' | 'feed'>
+  asOf: string
+  dash: { metrics: Supplier['metrics']; awaitingAck: number; overdueAck: number; open: number }
+  fulfillments: SupplierFulfillment[]
+  ack: AckDeadlines
+  products: { status: ProductStatus; available: number }[]
+  cases: { total: number; open: number }
+  actions: Action[]
+  targets: Targets
+  feedDue: string
+}) {
+  const shipped = fulfillments.filter((f) => ['shipped', 'delivered'].includes(f.fulfillment.status))
+  const stockUnits = products.reduce((s, p) => s + p.available, 0)
+  const ranked = actions
+    .map((a) => ({ ...a, elapsed: hoursBetween(a.start, asOf), target: Math.max(hoursBetween(a.start, a.due), 0.01) }))
+    .sort((a, b) => b.elapsed / b.target - a.elapsed / a.target)
+  const feedLate = asOf > feedDue
+  const ackCol = (r: SupplierFulfillment) => {
+    const at = r.fulfillment.acknowledgedAt
+    const d = ack[r.fulfillment.id]
+    if (!at || !d) return <span className="text-slate">—</span>
+    return <span className={at <= d.due ? 'text-success' : 'text-danger'}>{dur(hoursBetween(d.routed, at))}</span>
+  }
 
   return (
     <>
@@ -56,26 +63,25 @@ export function SupplierOverview() {
           </>
         }
       />
-      <DemoBanner>Demonstration environment. Orders, stock and cases are sample records for interface design. Service targets are placeholders to be agreed with suppliers.</DemoBanner>
 
       <MetricGrid>
-        <MetricCard label="Orders routed" value={myFulfillments.length} hint="All time, this account" />
-        <MetricCard label="Pending fulfillment" value={active.length} hint="Awaiting dispatch" tone={active.length ? 'warning' : 'default'} />
+        <MetricCard label="Orders routed" value={fulfillments.length} hint="Paid orders, most recent 200" />
+        <MetricCard label="Awaiting acknowledgment" value={dash.awaitingAck} hint={dash.overdueAck ? `${dash.overdueAck} past target` : `Target: ${targetText(targets.ack)}`} tone={dash.overdueAck ? 'danger' : dash.awaitingAck ? 'warning' : 'default'} />
+        <MetricCard label="Pending fulfillment" value={dash.open} hint="Not yet shipped" tone={dash.open ? 'warning' : 'default'} />
         <MetricCard label="Shipped" value={shipped.length} hint="Shipped or delivered" />
-        <MetricCard label="Products" value={myProducts.length} hint={`${myProducts.filter((p) => p.status === 'published').length} published`} />
-        <MetricCard label="Inventory units" value={stockUnits} hint="Across all SKUs" />
-        <MetricCard label="Returns & cases" value={myCases.length} hint={`${openCases.length} open`} />
-        <MetricCard label="Support issues" value={openCases.length} hint="Needing your response" tone={openCases.length ? 'danger' : 'default'} />
-        <MetricCard label="Avg. acknowledgment" value={supplier.metrics.acknowledgmentHours} decimals={1} suffix=" h" hint="Target: 1 business day" />
+        <MetricCard label="Products" value={products.length} hint={`${products.filter((p) => p.status === 'published').length} published`} />
+        <MetricCard label="Available units" value={stockUnits} hint="On hand minus reserved" />
+        <MetricCard label="Open cases" value={cases.open} hint={`${cases.total} total`} tone={cases.open ? 'danger' : 'default'} />
+        <MetricCard label="Avg. acknowledgment" value={dash.metrics.acknowledgmentHours} decimals={1} suffix=" h" hint={`Last 180 days · target ${targetText(targets.ack)}`} />
       </MetricGrid>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-12">
-        <Panel title="Action required" action={<span className="meta text-[0.6rem] text-slate">{actions.length} items · sorted by urgency</span>} pad={false} className="lg:col-span-7">
-          {actions.length === 0 ? (
-            <p className="px-5 py-12 text-center text-sm text-slate">Nothing needs your attention. All routed items are within target.</p>
+        <Panel title="Action required" action={<span className="meta text-[0.6rem] text-slate">{ranked.length} items · sorted by urgency</span>} pad={false} className="lg:col-span-7">
+          {ranked.length === 0 ? (
+            <p className="px-5 py-12 text-center text-sm text-slate">Nothing needs your attention right now.</p>
           ) : (
             <ul>
-              {actions.map((a) => {
+              {ranked.map((a) => {
                 const ratio = a.elapsed / a.target
                 const tone = ratio >= 1 ? 'bad' : ratio >= 0.6 ? 'warn' : 'info'
                 return (
@@ -106,10 +112,10 @@ export function SupplierOverview() {
         <Panel title="Inventory feed" action={<StatusBadge status={supplier.feed.status} />} className="lg:col-span-5">
           <dl className="grid grid-cols-2 gap-px border border-obsidian/10 bg-obsidian/10">
             {[
-              ['Connection', `${supplier.integration} (concept)`],
-              ['Last sync', dateTime(supplier.feed.lastSync)],
-              ['Feed age', dur(feedAge)],
-              ['SKUs in feed', String(myProducts.length)],
+              ['Connection', supplier.integration],
+              ['Last update', dateTime(supplier.feed.lastSync)],
+              ['Age', dur(Math.max(0, hoursBetween(supplier.feed.lastSync, asOf)))],
+              ['SKUs', String(products.length)],
             ].map(([k, v]) => (
               <div key={k} className="bg-ivory/80 p-4">
                 <dt className="meta text-[0.6rem] text-slate">{k}</dt>
@@ -118,8 +124,8 @@ export function SupplierOverview() {
             ))}
           </dl>
           <p className="mt-5 flex items-start gap-3 text-xs leading-relaxed text-slate">
-            <span className={cn('mt-1 size-1.5 shrink-0 rounded-full', feedAge <= 24 ? 'bg-success' : 'bg-warning')} aria-hidden />
-            {feedAge <= 24 ? 'Within the daily update target (placeholder).' : 'Older than the daily update target (placeholder). Upload a CSV or update stock manually.'}
+            <span className={cn('mt-1 size-1.5 shrink-0 rounded-full', feedLate ? 'bg-warning' : 'bg-success')} aria-hidden />
+            {feedLate ? `Older than the update target (${targetText(targets.inventory)}). Upload a CSV or update stock manually.` : `Within the update target (${targetText(targets.inventory)}).`}
           </p>
           <Link href="/supplier/inventory" className="link-line link-line--static mt-6 eyebrow text-obsidian">
             Manage inventory
@@ -131,14 +137,15 @@ export function SupplierOverview() {
         <Panel title="Recent fulfillments" action={<Link href="/supplier/orders" className="link-line meta text-[0.6rem] text-slate hover:text-obsidian">View all</Link>} pad={false}>
           <DataTable
             caption="Recent fulfillments routed to you"
-            rows={[...myFulfillments].sort((a, b) => b.placedAt.localeCompare(a.placedAt))}
+            rows={fulfillments.slice(0, 10)}
             rowKey={(r) => r.fulfillment.id}
+            empty="No orders have been routed to you yet."
             columns={[
               { key: 'id', header: 'Fulfillment', cell: (r) => <span className="font-medium tabular-nums">{r.fulfillment.id}</span> },
               { key: 'placed', header: 'Placed', cell: (r) => <span className="text-slate">{dateTime(r.placedAt)}</span>, sort: (r) => r.placedAt },
               { key: 'items', header: 'Items', cell: (r) => <span className="text-slate">{units(r.fulfillment.lines.reduce((s, l) => s + l.qty, 0))}</span> },
               { key: 'ship', header: 'Ship to', cell: (r) => <span className="text-slate">{r.shipTo.city}, {r.shipTo.region}</span> },
-              { key: 'ack', header: 'Ack time', cell: (r) => { const h = ackHours(r.fulfillment); return h === null ? <span className="text-slate">—</span> : <span className={h <= TARGET_HOURS.acknowledgment ? 'text-success' : 'text-danger'}>{dur(h)}</span> } },
+              { key: 'ack', header: 'Ack time', cell: ackCol },
               { key: 'value', header: 'Value', align: 'right', cell: (r) => money(r.fulfillment.lines.reduce((s, l) => s + l.qty * l.unitPrice, 0)) },
               { key: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.fulfillment.status} /> },
             ]}

@@ -11,6 +11,7 @@ import { EASE } from '@/components/motion/primitives'
 import { ToastProvider } from '@/components/ui/toast'
 import type { Notification } from '@/lib/types'
 import { date } from '@/lib/format'
+import { api, errorText } from '@/lib/client/api'
 
 export type NavItem = { href: string; label: string; icon: LucideIcon; badge?: number }
 
@@ -22,13 +23,16 @@ export function DashboardShell({
   product,
   nav,
   user,
-  notifications = [],
+  notifications: initialNotifications = [],
+  signOutTo = '/',
   children,
 }: {
   product: string
   nav: { group?: string; items: NavItem[] }[]
   user: { name: string; role: string; initials: string }
   notifications?: Notification[]
+  /** Where to go after signing out. Sign-out always ends the server session first. */
+  signOutTo?: string
   children: ReactNode
 }) {
   const pathname = usePathname()
@@ -37,7 +41,30 @@ export function DashboardShell({
   const [q, setQ] = useState('')
   const [miss, setMiss] = useState(false)
   const [bell, setBell] = useState(false)
+  const [notifications, setNotifications] = useState(initialNotifications)
+  const [signingOut, setSigningOut] = useState(false)
+  const [shellError, setShellError] = useState('')
   const unread = notifications.filter((n) => !n.read).length
+
+  const markRead = async (ids: string[] | 'all') => {
+    try {
+      await api('/api/notifications', { body: { ids } })
+      setNotifications((ns) => ns.map((n) => (ids === 'all' || ids.includes(n.id) ? { ...n, read: true } : n)))
+    } catch (e) {
+      setShellError(errorText(e))
+    }
+  }
+  const signOut = async () => {
+    setSigningOut(true)
+    try {
+      await api('/api/session/sign-out', { body: {} })
+      router.replace(signOutTo)
+      router.refresh()
+    } catch (e) {
+      setShellError(errorText(e))
+      setSigningOut(false)
+    }
+  }
   const root = nav[0]?.items[0]?.href ?? '/'
   const isActive = (href: string) => (href === root ? pathname === href : pathname === href || pathname.startsWith(href + '/'))
 
@@ -87,9 +114,9 @@ export function DashboardShell({
             <p className="truncate text-sm">{user.name}</p>
             <p className="meta text-[0.6rem] text-obsidian/40">{user.role}</p>
           </div>
-          <Link href="/" aria-label="Sign out" className="grid size-9 place-items-center text-obsidian/40 hover:text-teal">
+          <button type="button" onClick={signOut} disabled={signingOut} aria-label="Sign out" title="Sign out" className="grid size-9 place-items-center text-obsidian/40 hover:text-teal disabled:opacity-40">
             <LogOut className="size-4" strokeWidth={1.4} />
-          </Link>
+          </button>
         </div>
       </div>
     </div>
@@ -142,10 +169,12 @@ export function DashboardShell({
                 {miss && <span className="shrink-0 meta text-[0.6rem] text-danger" role="status">No match</span>}
               </label>
             </form>
-            <span className="ml-auto hidden items-center gap-2 meta text-[0.62rem] text-slate md:flex">
-              <span className="size-1.5 rounded-full bg-warning" aria-hidden /> Demonstration environment
-            </span>
-            <div className="relative">
+            {shellError && (
+              <p role="alert" className="ml-auto hidden max-w-xs truncate text-xs text-danger md:block" title={shellError}>
+                {shellError}
+              </p>
+            )}
+            <div className={cn('relative', !shellError && 'ml-auto')}>
               <button onClick={() => setBell((b) => !b)} aria-expanded={bell} aria-label={`Notifications, ${unread} unread`} className="relative grid size-10 place-items-center hover:text-gold-deep">
                 <Bell className="size-[18px]" strokeWidth={1.4} />
                 {unread > 0 && <span className="absolute right-2 top-2 size-1.5 rounded-full bg-gold" />}
@@ -159,13 +188,34 @@ export function DashboardShell({
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     className="absolute right-0 top-12 z-40 w-[min(360px,90vw)] border border-obsidian/10 bg-ivory shadow-[0_30px_60px_-20px_rgba(7,17,31,0.35)]"
                   >
-                    <p className="border-b border-obsidian/10 px-5 py-4 eyebrow text-slate">Notifications</p>
+                    <div className="flex items-center justify-between gap-3 border-b border-obsidian/10 px-5 py-4">
+                      <p className="eyebrow text-slate">Notifications</p>
+                      {unread > 0 && (
+                        <button type="button" onClick={() => markRead('all')} className="meta text-[0.58rem] text-gold-deep hover:text-obsidian">
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
                     <ul className="max-h-96 overflow-y-auto" data-lenis-prevent>
+                      {notifications.length === 0 && <li className="px-5 py-6 text-sm text-slate">No notifications yet.</li>}
                       {notifications.map((n) => (
                         <li key={n.id} className="border-b border-obsidian/5 px-5 py-4">
                           <p className="flex items-center gap-2 text-sm font-medium">
                             {!n.read && <span className="size-1.5 rounded-full bg-gold" aria-label="Unread" />}
-                            {n.title}
+                            {n.href ? (
+                              <Link
+                                href={n.href}
+                                onClick={() => {
+                                  setBell(false)
+                                  if (!n.read) void markRead([n.id])
+                                }}
+                                className="hover:text-gold-deep"
+                              >
+                                {n.title}
+                              </Link>
+                            ) : (
+                              n.title
+                            )}
                           </p>
                           <p className="mt-1 text-xs leading-relaxed text-slate">{n.body}</p>
                           <p className="mt-2 meta text-[0.6rem] text-slate/70">{date(n.at)}</p>

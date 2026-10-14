@@ -6,11 +6,19 @@ import { Header } from '@/components/site/header'
 import { Footer } from '@/components/site/footer'
 import { JsonLd } from '@/components/site/ui'
 import { SITE } from '@/lib/site'
+import { SiteProvider } from '@/components/commerce/site-context'
+import { currentActor } from '@/lib/server/page-auth'
+import { listCategories } from '@/lib/server/services/catalog'
+import { getSiteContent } from '@/lib/server/services/settings'
 
-export default function SiteLayout({ children }: { children: React.ReactNode }) {
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  const [actor, categories, content] = await Promise.all([currentActor(), listCategories().catch(() => []), getSiteContent()])
+  // Only the display name and role reach the browser.
+  const session = actor ? { name: actor.name, role: actor.role } : null
   return (
+    <SiteProvider session={session} categories={categories}>
     <ToastProvider>
-      <CartProvider>
+      <CartProvider customer={actor?.role === 'customer'}>
         <Experience>
           <JsonLd
             data={{
@@ -18,7 +26,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               '@type': 'Organization',
               name: 'Price-Select',
               url: SITE.url,
-              email: SITE.email,
+              email: content.contactEmail,
               parentOrganization: { '@type': 'Organization', name: SITE.parent, url: SITE.parentUrl },
             }}
           />
@@ -27,9 +35,10 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
           <main id="main" className="relative">
             {children}
           </main>
-          <Footer />
+          <Footer email={content.contactEmail} />
         </Experience>
       </CartProvider>
     </ToastProvider>
+    </SiteProvider>
   )
 }

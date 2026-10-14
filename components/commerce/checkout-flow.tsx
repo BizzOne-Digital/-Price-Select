@@ -1,31 +1,31 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Check, LockKeyhole } from 'lucide-react'
+import { Check, Copy, LockKeyhole } from 'lucide-react'
 import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react'
+import { api, ApiError, errorText, idempotencyKey } from '@/lib/client/api'
 import { money } from '@/lib/format'
-import { DEMO_SHIPPING_PER_SHIPMENT } from '@/lib/pricing'
+import type { CheckoutQuote } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { EASE } from '@/components/motion/primitives'
-import { btnClass, BtnInner, Button, ButtonLink, DemoNote } from '@/components/site/ui'
-import { useCart, type ResolvedLine } from './cart'
-import { groupBySupplier } from './cart-page'
+import { SafeImage } from '@/components/ui/safe-image'
+import { btnClass, BtnInner, ButtonLink } from '@/components/site/ui'
+import { groupBySupplier, useCart } from './cart'
+import { useSession } from './site-context'
 
-// Provider-ready checkout. Nothing here is sent anywhere: payment, tax and carriers are not yet
-// connected. Replace the demo shipping options and the payment mount with provider integrations.
+// Checkout. The browser sends product ids, quantities and addresses; the server prices the order,
+// reserves stock and takes payment. Nothing is treated as placed until the server confirms it.
 
-const STEPS = ['Information', 'Shipping', 'Payment', 'Review'] as const
-const SHIP_OPTIONS = [
-  { id: 'standard', label: 'Standard', detail: 'Supplier’s standard service', price: DEMO_SHIPPING_PER_SHIPMENT },
-  { id: 'priority', label: 'Priority', detail: 'Faster handling where the supplier offers it', price: DEMO_SHIPPING_PER_SHIPMENT + 20 },
-] as const
+const STEPS = ['Information', 'Shipping', 'Review'] as const
 
 type Address = { line1: string; line2: string; city: string; region: string; postal: string; country: string }
 const emptyAddress: Address = { line1: '', line2: '', city: '', region: '', postal: '', country: '' }
-type Info = { email: string; phone: string; first: string; last: string; ship: Address; billingSame: boolean; bill: Address }
+type Info = { email: string; phone: string; first: string; last: string; ship: Address; billingSame: boolean; bill: Address; save: boolean }
 type Errors = Record<string, string>
+type Placed = { orderId: string; status: string; paymentStatus: string; total: number; guestAccessToken?: string; email: string; shipments: number }
+type AccountAddress = Address & { id: string; name: string; phone: string; isDefault: boolean }
+type Account = { name: string; email: string; phone: string; addresses: AccountAddress[] }
 
 function validate(i: Info): Errors {
   const e: Errors = {}
@@ -34,26 +34,58 @@ function validate(i: Info): Errors {
   if (!i.first.trim()) e.first = 'Enter your first name.'
   if (!i.last.trim()) e.last = 'Enter your last name.'
   const addr = (a: Address, p: string) => {
-    if (!a.line1.trim()) e[`${p}.line1`] = 'Enter a street address.'
+    if (a.line1.trim().length < 2) e[`${p}.line1`] = 'Enter a street address.'
     if (!a.city.trim()) e[`${p}.city`] = 'Enter a city.'
     if (!a.region.trim()) e[`${p}.region`] = 'Enter a state or region.'
     if (!a.postal.trim()) e[`${p}.postal`] = 'Enter a postal code.'
-    if (!a.country.trim()) e[`${p}.country`] = 'Enter a country.'
+    if (a.country.trim().length < 2) e[`${p}.country`] = 'Enter a country.'
   }
   addr(i.ship, 'ship')
   if (!i.billingSame) addr(i.bill, 'bill')
   return e
 }
 
+const snapshot = (i: Info, a: Address) => ({ name: `${i.first.trim()} ${i.last.trim()}`.trim(), ...a, phone: i.phone.trim() })
+
 export function CheckoutFlow() {
-  const { lines, ready, clear } = useCart()
+  const { items, lines, quote, ready, busy, error: cartError, reload, clearLocal } = useCart()
+  const session = useSession()
+  const customer = session?.role === 'customer'
   const [step, setStep] = useState(0)
-  const [info, setInfo] = useState<Info>({ email: '', phone: '', first: '', last: '', ship: emptyAddress, billingSame: true, bill: emptyAddress })
+  const [info, setInfo] = useState<Info>({ email: '', phone: '', first: '', last: '', ship: emptyAddress, billingSame: true, bill: emptyAddress, save: false })
   const [errors, setErrors] = useState<Errors>({})
-  const [ship, setShip] = useState<Record<string, string>>({})
-  const [placed, setPlaced] = useState<{ id: string; lines: ResolvedLine[]; total: number; email: string; shipments: number } | null>(null)
+  const [placing, setPlacing] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  const [placed, setPlaced] = useState<Placed | null>(null)
   const heading = useRef<HTMLHeadingElement>(null)
   const first = useRef(true)
+  // One key per checkout attempt, kept across retries so a resubmission can never create a second order.
+  const key = useRef('')
+  if (!key.current) key.current = idempotencyKey()
+
+  // Prefill from the signed-in customer's account (default address first).
+  useEffect(() => {
+    if (!customer) return
+    let live = true
+    api<Account>('/api/account')
+      .then((a) => {
+        if (!live) return
+        const d = a.addresses.find((x) => x.isDefault) ?? a.addresses[0]
+        const [fn, ...ln] = (d?.name || a.name).split(' ')
+        setInfo((s) => ({
+          ...s,
+          email: s.email || a.email,
+          phone: s.phone || d?.phone || a.phone,
+          first: s.first || fn || '',
+          last: s.last || ln.join(' '),
+          ship: s.ship.line1 || !d ? s.ship : { line1: d.line1, line2: d.line2, city: d.city, region: d.region, postal: d.postal, country: d.country },
+        }))
+      })
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [customer])
 
   useEffect(() => {
     if (first.current) {
@@ -64,15 +96,15 @@ export function CheckoutFlow() {
     document.getElementById('checkout')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [step, placed])
 
-  if (!ready) return <div className="min-h-[60svh]" aria-busy="true" />
-
   if (placed) return <Confirmation order={placed} headingRef={heading} />
 
-  if (!lines.length)
+  if (!ready || (items.length > 0 && !quote && !cartError)) return <div className="min-h-[60svh]" aria-busy="true" />
+
+  if (!items.length || !quote)
     return (
       <div className="mx-auto max-w-xl py-16 text-center">
-        <p className="font-display text-5xl font-light text-obsidian">Your cart is empty.</p>
-        <p className="mt-4 text-sm text-slate">Add products to your cart to begin checkout.</p>
+        <p className="font-display text-5xl font-light text-obsidian">{cartError && items.length ? 'Your cart could not be loaded.' : 'Your cart is empty.'}</p>
+        <p className="mt-4 text-sm text-slate">{cartError && items.length ? cartError : 'Add products to your cart to begin checkout.'}</p>
         <ButtonLink href="/shop" variant="dark" className="mt-10">
           Shop the selection
         </ButtonLink>
@@ -80,12 +112,10 @@ export function CheckoutFlow() {
     )
 
   const groups = groupBySupplier(lines)
-  const subtotal = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0)
-  const shipping = groups.reduce((s, g) => s + (SHIP_OPTIONS.find((o) => o.id === (ship[g.supplierId] ?? 'standard'))?.price ?? 0), 0)
-  const discount = 0
-  const total = subtotal + shipping - discount
+  const blockers = [...new Map(quote.blockers.filter((b) => b.code !== 'empty').map((b) => [b.message, b])).values()]
+  const unavailable = blockers.some((b) => b.code.endsWith('_not_configured'))
 
-  const setField = (k: keyof Info) => (v: string) => setInfo((s) => ({ ...s, [k]: v }))
+  const setField = (k: 'email' | 'phone' | 'first' | 'last') => (v: string) => setInfo((s) => ({ ...s, [k]: v }))
   const setAddr = (which: 'ship' | 'bill', k: keyof Address) => (v: string) => setInfo((s) => ({ ...s, [which]: { ...s[which], [k]: v } }))
   const err = (k: string) => errors[k]
 
@@ -100,11 +130,36 @@ export function CheckoutFlow() {
     setStep(1)
   }
 
-  const placeOrder = () => {
-    // Demonstration only: no payment is authorized and nothing leaves the browser.
-    const id = `PS-${Math.floor(100000 + Math.random() * 900000)}`
-    setPlaced({ id, lines, total, email: info.email, shipments: groups.length })
-    clear()
+  const placeOrder = async () => {
+    setPlacing(true)
+    setSubmitError('')
+    try {
+      const r = await api<Omit<Placed, 'email' | 'shipments'>>('/api/checkout', {
+        body: {
+          items,
+          email: info.email.trim(),
+          shipTo: snapshot(info, info.ship),
+          billTo: info.billingSame ? undefined : snapshot(info, info.bill),
+          idempotencyKey: key.current,
+          saveAddress: customer && info.save ? true : undefined,
+        },
+      })
+      setPlaced({ ...r, email: info.email.trim(), shipments: quote.shipments })
+      // The server cart is cleared by the server for customers; guests clear this browser only now.
+      if (customer) void reload()
+      else clearLocal()
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 402) {
+        // A declined payment closes that attempt; a fresh key lets the customer try again.
+        key.current = idempotencyKey()
+        setSubmitError(`${e.message} You have not been charged for this attempt.`)
+      } else if (e instanceof ApiError && e.status === 409) {
+        setSubmitError(errorText(e))
+        void reload()
+      } else setSubmitError(errorText(e))
+    } finally {
+      setPlacing(false)
+    }
   }
 
   const addressFields = (which: 'ship' | 'bill') => {
@@ -127,9 +182,22 @@ export function CheckoutFlow() {
       <div className="lg:col-span-7">
         <StepIndicator step={step} onGo={(n) => n < step && setStep(n)} />
 
+        {unavailable && (
+          <div role="status" className="mt-10 border border-warning/40 bg-warning/10 px-5 py-4 text-sm text-obsidian">
+            <p className="eyebrow text-warning">Ordering is not open yet</p>
+            <ul className="mt-2 space-y-1 text-obsidian/80">
+              {blockers
+                .filter((b) => b.code.endsWith('_not_configured'))
+                .map((b) => (
+                  <li key={b.code}>{b.message}</li>
+                ))}
+            </ul>
+          </div>
+        )}
+
         <div className="mt-12">
           <h2 ref={heading} tabIndex={-1} className="font-display text-4xl font-light text-obsidian outline-none md:text-5xl">
-            {['Your information', 'Shipping', 'Payment', 'Review your order'][step]}
+            {['Your information', 'Shipping', 'Review your order'][step]}
           </h2>
 
           {step === 0 && (
@@ -143,13 +211,15 @@ export function CheckoutFlow() {
             >
               <fieldset>
                 <legend className="eyebrow text-obsidian">Contact</legend>
-                <p className="mt-2 text-sm text-slate">
-                  Checking out as a guest.{' '}
-                  <Link href="/account" className="text-gold-deep underline underline-offset-4">
-                    Sign in
-                  </Link>{' '}
-                  for a faster checkout (accounts are not yet connected).
-                </p>
+                {!customer && (
+                  <p className="mt-2 text-sm text-slate">
+                    Checking out as a guest.{' '}
+                    <Link href="/sign-in/customers?next=/checkout" className="text-gold-deep underline underline-offset-4">
+                      Sign in
+                    </Link>{' '}
+                    to use your saved details and see this order in your account.
+                  </p>
+                )}
                 <div className="mt-4 grid gap-x-6 gap-y-2 sm:grid-cols-2">
                   <Field id="co-email" type="email" label="Email" error={err('email')} value={info.email} onValue={setField('email')} autoComplete="email" inputMode="email" hint="For your order confirmation." />
                   <Field id="co-phone" type="tel" label="Phone (optional)" error={err('phone')} value={info.phone} onValue={setField('phone')} autoComplete="tel" hint="For delivery coordination." />
@@ -161,6 +231,12 @@ export function CheckoutFlow() {
               <fieldset>
                 <legend className="eyebrow text-obsidian">Shipping address</legend>
                 <div className="mt-4">{addressFields('ship')}</div>
+                {customer && (
+                  <label className="mt-5 flex min-h-11 cursor-pointer items-center gap-3 text-sm text-obsidian">
+                    <input type="checkbox" checked={info.save} onChange={(e) => setInfo((s) => ({ ...s, save: e.target.checked }))} className="size-4 accent-[var(--color-gold-deep)]" />
+                    Save this address to my account
+                  </label>
+                )}
               </fieldset>
 
               <fieldset>
@@ -196,9 +272,7 @@ export function CheckoutFlow() {
               }}
               className="mt-10 space-y-12"
             >
-              <p className="text-sm leading-relaxed text-slate">
-                Products may ship separately when fulfilled by different suppliers. Choose a service for each shipment.
-              </p>
+              <p className="text-sm leading-relaxed text-slate">Products may ship separately when fulfilled by different suppliers. Each shipment receives its own tracking.</p>
               {groups.map((g, gi) => (
                 <fieldset key={g.supplierId}>
                   <legend className="flex w-full items-baseline justify-between gap-4 border-b border-obsidian/15 pb-3">
@@ -208,77 +282,27 @@ export function CheckoutFlow() {
                   </legend>
                   <ul className="mt-4 space-y-3">
                     {g.items.map((l) => (
-                      <li key={l.slug} className="flex items-center gap-4 text-sm">
+                      <li key={l.productId} className="flex items-center gap-4 text-sm">
                         <span className="relative size-12 shrink-0 overflow-hidden bg-pearl">
-                          <Image src={l.product.images[0].src} alt="" fill sizes="48px" className="object-cover" />
+                          <SafeImage src={l.image?.src ?? ''} alt="" fill sizes="48px" className="object-cover" />
                         </span>
                         <span className="flex-1 text-obsidian">
-                          {l.product.name} <span className="text-slate">× {l.qty}</span>
+                          {l.name} <span className="text-slate">× {l.qty}</span>
+                          {l.problem && <span className="block text-xs text-danger">{l.problem}</span>}
                         </span>
-                        <span className="text-xs text-slate">Est. {l.product.deliveryEstimate}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {SHIP_OPTIONS.map((o) => {
-                      const on = (ship[g.supplierId] ?? 'standard') === o.id
-                      return (
-                        <label key={o.id} className={cn('relative flex min-h-11 cursor-pointer items-start justify-between gap-4 border p-4 transition-colors', on ? 'border-gold-deep bg-pearl/60' : 'border-obsidian/15 hover:border-obsidian/40')}>
-                          <input type="radio" name={`ship-${g.supplierId}`} value={o.id} checked={on} onChange={() => setShip((s) => ({ ...s, [g.supplierId]: o.id }))} className="peer sr-only" />
-                          <span aria-hidden className="absolute inset-0 peer-focus-visible:outline peer-focus-visible:outline-1 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-gold" />
-                          <span>
-                            <span className="block text-sm font-medium text-obsidian">{o.label}</span>
-                            <span className="mt-1 block text-xs text-slate">{o.detail}</span>
-                          </span>
-                          <span className="text-right">
-                            <span className="block text-sm tabular-nums text-obsidian">{money(o.price)}</span>
-                            <span className="meta text-[0.6rem] text-slate">Demo rate</span>
-                          </span>
-                        </label>
-                      )
-                    })}
-                  </div>
                 </fieldset>
               ))}
-              <DemoNote>Demo rates — carriers are not yet connected</DemoNote>
-              <Actions next="Continue to payment" onBack={() => setStep(0)} />
+              <p className="text-sm text-slate">
+                Shipping: <span className="tabular-nums text-obsidian">{quote.shipping == null ? 'not yet available' : money(quote.shipping)}</span>
+              </p>
+              <Actions next="Continue to review" onBack={() => setStep(0)} />
             </form>
           )}
 
           {step === 2 && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                setStep(3)
-              }}
-              className="mt-10 space-y-10"
-            >
-              <section aria-labelledby="pay-mount" className="border border-obsidian/15">
-                <div className="flex items-center gap-3 border-b border-obsidian/10 px-6 py-4">
-                  <LockKeyhole className="size-4 text-gold-deep" strokeWidth={1.3} aria-hidden />
-                  <h3 id="pay-mount" className="eyebrow text-obsidian">
-                    Secure payment field
-                  </h3>
-                </div>
-                {/* The payment provider's hosted form mounts here. Card data never touches Price-Select servers. */}
-                <div id="payment-provider-mount" data-provider="unconnected" className="m-6 grid min-h-48 place-items-center border border-dashed border-obsidian/20 bg-pearl/40 p-8 text-center">
-                  <div className="max-w-sm">
-                    <p className="text-sm leading-relaxed text-obsidian">Mounts the payment provider’s hosted form; no card data touches Price-Select servers.</p>
-                    <p className="meta mt-4 text-warning">Provider not yet connected</p>
-                  </div>
-                </div>
-              </section>
-              <p className="text-sm text-slate">
-                Billing address: {info.billingSame ? 'same as shipping' : `${info.bill.line1}, ${info.bill.city}`}.{' '}
-                <button type="button" onClick={() => setStep(0)} className="text-gold-deep underline underline-offset-4">
-                  Change
-                </button>
-              </p>
-              <Actions next="Continue to review" onBack={() => setStep(1)} />
-            </form>
-          )}
-
-          {step === 3 && (
             <div className="mt-10 space-y-12">
               <dl className="grid gap-8 border-y border-obsidian/10 py-8 text-sm sm:grid-cols-3">
                 <ReviewBlock title="Contact" onEdit={() => setStep(0)}>
@@ -300,56 +324,67 @@ export function CheckoutFlow() {
                   <br />
                   {info.ship.country}
                 </ReviewBlock>
-                <ReviewBlock title="Payment" onEdit={() => setStep(2)}>
-                  Provider not yet connected
+                <ReviewBlock title="Bill to" onEdit={() => setStep(0)}>
+                  {info.billingSame ? 'Same as shipping' : `${info.bill.line1}, ${info.bill.city}`}
                 </ReviewBlock>
               </dl>
 
-              {groups.map((g, gi) => {
-                const opt = SHIP_OPTIONS.find((o) => o.id === (ship[g.supplierId] ?? 'standard'))!
-                return (
-                  <section key={g.supplierId} aria-labelledby={`rv-${gi}`}>
-                    <header className="flex items-baseline justify-between gap-4 border-b border-obsidian/15 pb-3">
-                      <h3 id={`rv-${gi}`} className="eyebrow text-obsidian">
-                        Shipment {gi + 1} of {groups.length}
-                      </h3>
-                      <p className="meta text-slate">
-                        {opt.label} · {money(opt.price)}
-                      </p>
-                    </header>
-                    <ul>
-                      {g.items.map((l) => (
-                        <li key={l.slug} className="flex items-center gap-4 border-b border-obsidian/8 py-4 text-sm">
-                          <span className="relative h-16 w-13 shrink-0 overflow-hidden bg-pearl">
-                            <Image src={l.product.images[0].src} alt="" fill sizes="52px" className="object-cover" />
+              {groups.map((g, gi) => (
+                <section key={g.supplierId} aria-labelledby={`rv-${gi}`}>
+                  <header className="flex items-baseline justify-between gap-4 border-b border-obsidian/15 pb-3">
+                    <h3 id={`rv-${gi}`} className="eyebrow text-obsidian">
+                      Shipment {gi + 1} of {groups.length}
+                    </h3>
+                  </header>
+                  <ul>
+                    {g.items.map((l) => (
+                      <li key={l.productId} className="flex items-center gap-4 border-b border-obsidian/8 py-4 text-sm">
+                        <span className="relative h-16 w-13 shrink-0 overflow-hidden bg-pearl">
+                          <SafeImage src={l.image?.src ?? ''} alt="" fill sizes="52px" className="object-cover" />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-obsidian">{l.name}</span>
+                          <span className="text-xs text-slate">
+                            {l.qty} × {money(l.unitPrice)}
                           </span>
-                          <span className="flex-1">
-                            <span className="block text-obsidian">{l.product.name}</span>
-                            <span className="text-xs text-slate">
-                              {l.qty} × {money(l.unitPrice)}
-                            </span>
-                          </span>
-                          <span className="tabular-nums text-obsidian">{money(l.unitPrice * l.qty)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                )
-              })}
+                          {l.problem && <span className="block text-xs text-danger">{l.problem}</span>}
+                        </span>
+                        <span className="tabular-nums text-obsidian">{money(l.unitPrice * l.qty)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
 
               <div className="max-w-md sm:ml-auto">
-                <Totals subtotal={subtotal} shipping={shipping} shipments={groups.length} discount={discount} total={total} />
+                <Totals quote={quote} />
               </div>
 
+              {blockers.length > 0 && (
+                <ul role="status" className="space-y-1 border-l border-warning pl-4 text-sm text-obsidian/80">
+                  {blockers.map((b) => (
+                    <li key={b.message}>{b.message}</li>
+                  ))}
+                </ul>
+              )}
+              {submitError && (
+                <p role="alert" className="border-l border-danger pl-4 text-sm text-danger">
+                  {submitError}
+                </p>
+              )}
+
               <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <button type="button" onClick={() => setStep(2)} className="link-line eyebrow h-11 text-slate hover:text-obsidian">
+                <button type="button" onClick={() => setStep(1)} className="link-line eyebrow h-11 text-slate hover:text-obsidian">
                   Back
                 </button>
-                <Button type="button" onClick={placeOrder} variant="dark">
-                  Place demonstration order · {money(total)}
-                </Button>
+                <button type="button" onClick={placeOrder} disabled={placing || busy || blockers.length > 0} aria-describedby="co-place-note" className={btnClass('dark', 'disabled:cursor-not-allowed disabled:opacity-50')}>
+                  <BtnInner variant="dark">{placing ? 'Placing order…' : `Place order${quote.total != null ? ` · ${money(quote.total)}` : ''}`}</BtnInner>
+                </button>
               </div>
-              <p className="text-xs leading-relaxed text-slate">This is a demonstration environment. Placing this order does not take a payment or contact any supplier.</p>
+              <p id="co-place-note" className="flex items-start gap-2 text-xs leading-relaxed text-slate">
+                <LockKeyhole className="mt-0.5 size-3 shrink-0" aria-hidden />
+                {blockers.length > 0 ? 'Placing an order is disabled until the items above are resolved.' : 'Payment is taken securely by the payment provider when you place the order. Card details never touch Price-Select servers.'}
+              </p>
             </div>
           )}
         </div>
@@ -362,17 +397,17 @@ export function CheckoutFlow() {
           </h2>
           <ul className="mt-6 space-y-4">
             {lines.map((l) => (
-              <li key={l.slug} className="flex items-center gap-4 text-sm">
+              <li key={l.productId} className="flex items-center gap-4 text-sm">
                 <span className="relative h-14 w-11 shrink-0 overflow-hidden bg-pearl">
-                  <Image src={l.product.images[0].src} alt="" fill sizes="44px" className="object-cover" />
+                  <SafeImage src={l.image?.src ?? ''} alt="" fill sizes="44px" className="object-cover" />
                   <span className="absolute right-0 top-0 grid h-4 min-w-4 place-items-center bg-ivory px-1 text-[9px] text-obsidian">{l.qty}</span>
                 </span>
-                <span className="min-w-0 flex-1 truncate text-obsidian">{l.product.name}</span>
+                <span className="min-w-0 flex-1 truncate text-obsidian">{l.name}</span>
                 <span className="tabular-nums text-obsidian">{money(l.unitPrice * l.qty)}</span>
               </li>
             ))}
           </ul>
-          <Totals subtotal={subtotal} shipping={step >= 1 ? shipping : null} shipments={groups.length} discount={discount} total={total} />
+          <Totals quote={quote} />
           <Link href="/cart" className="link-line eyebrow mt-6 text-slate hover:text-obsidian">
             Edit cart
           </Link>
@@ -382,35 +417,33 @@ export function CheckoutFlow() {
   )
 }
 
-export function Totals({ subtotal, shipping, shipments, discount, total }: { subtotal: number; shipping: number | null; shipments: number; discount: number; total: number }) {
+export function Totals({ quote: q }: { quote: CheckoutQuote }) {
+  const na = <span className="text-slate">Not yet available</span>
   return (
     <>
       <dl className="mt-6 space-y-3 border-t border-obsidian/10 pt-6 text-sm">
         <div className="flex justify-between gap-4">
           <dt className="text-slate">Product subtotal</dt>
-          <dd className="tabular-nums">{money(subtotal)}</dd>
+          <dd className="tabular-nums">{money(q.subtotal)}</dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt className="text-slate">
-            Shipping <span className="text-xs text-slate/70">({shipments} shipment{shipments === 1 ? '' : 's'}, demo)</span>
+            Shipping <span className="text-xs text-slate/70">({q.shipments} shipment{q.shipments === 1 ? '' : 's'})</span>
           </dt>
-          <dd className="tabular-nums">{shipping === null ? 'Next step' : money(shipping)}</dd>
+          <dd className="tabular-nums">{q.shipping == null ? na : money(q.shipping)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-slate">
-            Applicable taxes
-            <span className="block text-xs text-slate/70">Calculated by tax provider (not yet connected)</span>
-          </dt>
-          <dd className="text-slate">—</dd>
+          <dt className="text-slate">Applicable taxes</dt>
+          <dd className="tabular-nums">{q.tax == null ? na : money(q.tax)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-slate">Discounts</dt>
-          <dd className="tabular-nums">{discount ? `−${money(discount)}` : money(0)}</dd>
+          <dt className="text-slate">Discounts{q.membershipTier && <span className="block text-xs text-slate/70">Membership pricing applied</span>}</dt>
+          <dd className="tabular-nums">{q.discount ? `−${money(q.discount)}` : money(0)}</dd>
         </div>
       </dl>
       <div className="mt-5 flex items-baseline justify-between border-t border-obsidian/15 pt-5">
-        <p className="eyebrow">Total</p>
-        <p className="font-display text-3xl font-light tabular-nums">{money(shipping === null ? subtotal - discount : total)}</p>
+        <p className="eyebrow">{q.total == null ? 'Products total' : 'Total'}</p>
+        <p className="font-display text-3xl font-light tabular-nums">{money(q.total ?? q.subtotal - q.discount)}</p>
       </div>
     </>
   )
@@ -419,7 +452,7 @@ export function Totals({ subtotal, shipping, shipments, discount, total }: { sub
 function StepIndicator({ step, onGo }: { step: number; onGo: (n: number) => void }) {
   return (
     <nav aria-label="Checkout progress">
-      <ol className="grid grid-cols-4">
+      <ol className="grid grid-cols-3">
         {STEPS.map((s, i) => {
           const done = i < step
           const cur = i === step
@@ -512,13 +545,17 @@ function ReviewBlock({ title, onEdit, children }: { title: string; onEdit: () =>
   )
 }
 
-function Confirmation({ order, headingRef }: { order: { id: string; lines: ResolvedLine[]; total: number; email: string; shipments: number }; headingRef: React.RefObject<HTMLHeadingElement | null> }) {
+function Confirmation({ order, headingRef }: { order: Placed; headingRef: React.RefObject<HTMLHeadingElement | null> }) {
+  const [copied, setCopied] = useState(false)
+  const paid = order.paymentStatus === 'captured' || order.paymentStatus === 'authorized'
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: EASE }} className="mx-auto max-w-3xl">
-      <p role="status" className="flex items-center gap-3 border border-warning/40 bg-warning/10 px-5 py-3 text-sm text-obsidian">
-        <span className="eyebrow text-warning">Demonstration order</span>
-        No payment was taken and no supplier was contacted.
-      </p>
+      {!paid && (
+        <p role="status" className="flex flex-wrap items-center gap-3 border border-warning/40 bg-warning/10 px-5 py-3 text-sm text-obsidian">
+          <span className="eyebrow text-warning">Payment pending</span>
+          Your order is reserved while the payment provider confirms the payment.
+        </p>
+      )}
       <p className="eyebrow mt-14 text-gold-deep">Order received</p>
       <h2 ref={headingRef} tabIndex={-1} className="mt-6 text-display-3 text-obsidian outline-none">
         Thank you. <em className="text-gold-deep">Selected.</em>
@@ -526,17 +563,42 @@ function Confirmation({ order, headingRef }: { order: { id: string; lines: Resol
       <dl className="mt-10 grid gap-6 border-y border-obsidian/10 py-8 sm:grid-cols-3">
         <div>
           <dt className="meta text-slate">Order number</dt>
-          <dd className="mt-2 font-display text-3xl font-light tabular-nums text-obsidian">{order.id}</dd>
+          <dd className="mt-2 font-display text-3xl font-light tabular-nums text-obsidian">{order.orderId}</dd>
         </div>
         <div>
           <dt className="meta text-slate">Shipments</dt>
           <dd className="mt-2 font-display text-3xl font-light text-obsidian">{order.shipments}</dd>
         </div>
         <div>
-          <dt className="meta text-slate">Total before taxes</dt>
+          <dt className="meta text-slate">Total</dt>
           <dd className="mt-2 font-display text-3xl font-light tabular-nums text-obsidian">{money(order.total)}</dd>
         </div>
       </dl>
+
+      {order.guestAccessToken && (
+        <section aria-labelledby="access-title" className="mt-10 border border-gold/50 bg-pearl/60 p-6">
+          <h3 id="access-title" className="eyebrow text-obsidian">
+            Your order access code
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate">Copy and keep this code now — it is shown only once. You need it with your order number to track this order without an account.</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <code className="break-all border border-obsidian/15 bg-ivory px-3 py-2 text-sm text-obsidian">{order.guestAccessToken}</code>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(order.guestAccessToken!)
+                  setCopied(true)
+                } catch {}
+              }}
+              className="meta flex h-11 items-center gap-2 border border-obsidian/20 px-4 text-obsidian hover:border-gold-deep"
+            >
+              {copied ? <Check className="size-3.5" aria-hidden /> : <Copy className="size-3.5" aria-hidden />}
+              {copied ? 'Copied' : 'Copy code'}
+            </button>
+          </div>
+        </section>
+      )}
 
       <h3 className="eyebrow mt-14 text-obsidian">What happens next</h3>
       <ol className="mt-6">
@@ -555,11 +617,11 @@ function Confirmation({ order, headingRef }: { order: { id: string; lines: Resol
         ))}
       </ol>
       <p className="mt-6 text-sm text-slate">
-        A confirmation email would be sent to <span className="text-obsidian">{order.email}</span> once email notifications are connected.
+        Order updates for this order use <span className="text-obsidian">{order.email}</span>.
       </p>
       <div className="mt-12 flex flex-wrap gap-4">
-        <ButtonLink href="/account/orders" variant="dark">
-          View your orders
+        <ButtonLink href={order.guestAccessToken ? '/track' : `/account/orders/${order.orderId}`} variant="dark">
+          {order.guestAccessToken ? 'Track this order' : 'View your order'}
         </ButtonLink>
         <ButtonLink href="/shop" variant="outline-dark">
           Continue shopping

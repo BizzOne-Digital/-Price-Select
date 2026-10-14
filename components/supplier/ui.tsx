@@ -3,7 +3,8 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { Check, Paperclip, X } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { errorText } from '@/lib/client/api'
 import { cn } from '@/lib/utils'
 import { EASE } from '@/components/motion/primitives'
 
@@ -68,20 +69,60 @@ export function Drawer({ open, onClose, title, eyebrow, children, footer }: { op
   )
 }
 
-/** Hairline file picker. Keeps filenames only; nothing is uploaded in the demo. */
-export function FilePick({ label, hint, files, onChange, accept, multiple, error, dark }: { label: string; hint?: string; files: string[]; onChange: (f: FileList | null) => void; accept?: string; multiple?: boolean; error?: string; dark?: boolean }) {
+/**
+ * Hairline file picker that uploads each chosen file through `onUpload` and shows per-file progress
+ * and errors. `files` lists what the server already holds (links open the private file).
+ */
+export function FilePick({ label, hint, files, onUpload, accept, multiple, error, dark, disabled }: { label: string; hint?: string; files: { id: string; name: string; href?: string; status?: string }[]; onUpload: (f: File, onProgress: (p: number) => void) => Promise<void>; accept?: string; multiple?: boolean; error?: string; dark?: boolean; disabled?: boolean }) {
   const id = useId()
+  const [jobs, setJobs] = useState<{ key: string; name: string; p: number; error?: string }[]>([])
+  const busy = jobs.some((j) => !j.error)
+  const pick = async (list: FileList | null) => {
+    for (const f of Array.from(list ?? [])) {
+      const key = `${f.name}-${Date.now()}-${Math.random()}`
+      setJobs((s) => [...s, { key, name: f.name, p: 0 }])
+      try {
+        await onUpload(f, (p) => setJobs((s) => s.map((j) => (j.key === key ? { ...j, p } : j))))
+        setJobs((s) => s.filter((j) => j.key !== key))
+      } catch (e) {
+        setJobs((s) => s.map((j) => (j.key === key ? { ...j, error: errorText(e) } : j)))
+      }
+    }
+  }
   return (
     <div>
-      <label htmlFor={id} className={cn('group flex min-h-14 cursor-pointer items-center gap-4 border border-dashed px-4 py-3 transition-colors', dark ? 'border-obsidian/20 hover:border-champagne/70' : 'border-obsidian/20 hover:border-gold', error && 'border-danger/60')}>
+      <label htmlFor={id} className={cn('group flex min-h-14 items-center gap-4 border border-dashed px-4 py-3 transition-colors', disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer', dark ? 'border-obsidian/20 hover:border-champagne/70' : 'border-obsidian/20 hover:border-gold', error && 'border-danger/60')}>
         <Paperclip className={cn('size-4 shrink-0', dark ? 'text-teal' : 'text-gold-deep')} strokeWidth={1.4} aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="block text-sm">{label}</span>
-          <span className={cn('mt-0.5 block truncate text-xs', dark ? 'text-obsidian/45' : 'text-slate')}>{files.length ? files.join(', ') : (hint ?? 'Select a file')}</span>
+          <span className={cn('mt-0.5 block truncate text-xs', dark ? 'text-obsidian/45' : 'text-slate')}>{busy ? 'Uploading…' : (hint ?? 'Select a file')}</span>
         </span>
-        {files.length > 0 && <Check className="size-4 text-success" strokeWidth={1.6} aria-label="Attached" />}
-        <input id={id} type="file" className="sr-only" accept={accept} multiple={multiple} onChange={(e) => onChange(e.target.files)} aria-invalid={!!error} />
+        {files.length > 0 && <Check className="size-4 text-success" strokeWidth={1.6} aria-label="Uploaded" />}
+        <input id={id} type="file" className="sr-only" accept={accept} multiple={multiple} disabled={disabled || busy} onChange={(e) => (pick(e.target.files), (e.target.value = ''))} aria-invalid={!!error} />
       </label>
+      {(files.length > 0 || jobs.length > 0) && (
+        <ul className="mt-2 space-y-1 text-xs" aria-live="polite">
+          {files.map((f) => (
+            <li key={f.id} className="flex items-center justify-between gap-3">
+              {f.href ? <a href={f.href} target="_blank" rel="noreferrer" className="link-line truncate">{f.name}</a> : <span className="truncate">{f.name}</span>}
+              {f.status && <span className="meta shrink-0 text-[0.55rem] text-slate">{f.status.replace('_', ' ')}</span>}
+            </li>
+          ))}
+          {jobs.map((j) => (
+            <li key={j.key} className="flex items-center justify-between gap-3">
+              <span className="truncate">{j.name}</span>
+              {j.error ? (
+                <span className="flex shrink-0 items-center gap-2 text-danger" role="alert">
+                  {j.error}
+                  <button type="button" aria-label={`Dismiss ${j.name}`} onClick={() => setJobs((s) => s.filter((x) => x.key !== j.key))}><X className="size-3" /></button>
+                </span>
+              ) : (
+                <span className="shrink-0 tabular-nums text-slate">{Math.round(j.p * 100)}%</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
       {error && <p className="mt-1.5 text-xs text-danger">{error}</p>}
     </div>
   )
@@ -127,10 +168,4 @@ export function LinkButton({ href, children, tone = 'default' }: { href: string;
   )
 }
 
-const dtf = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' })
-/** Date + time in UTC, so server and client render identically. */
-export const dateTime = (iso: string) => `${dtf.format(new Date(iso))} UTC`
-/** "3.5 h" / "2 d 4 h" */
-export const dur = (h: number) => (h < 48 ? `${Math.round(h * 10) / 10} h` : `${Math.floor(h / 24)} d ${Math.round(h % 24)} h`)
-const df = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
-export const day = (iso: string) => df.format(new Date(iso))
+export { dateTime, dur, day } from './data'

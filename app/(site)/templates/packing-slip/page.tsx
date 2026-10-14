@@ -1,13 +1,14 @@
 import type { Metadata } from 'next'
 import { PageBand } from '@/components/site/ui'
 import { DocHeader, DocLabel, DocumentFrame } from '@/components/templates/document'
-import { getOrder } from '@/lib/data/operations'
+import { SAMPLE_ORDER } from '@/components/templates/sample'
 import { date } from '@/lib/format'
 
 export const metadata: Metadata = { title: 'Packing slip template' }
 
 export default function PackingSlipTemplate() {
-  const o = getOrder('PS-240118')!
+  // Fictional sample data only; this public preview never reads live orders.
+  const o = SAMPLE_ORDER
   const f = o.fulfillments[0]
 
   return (
@@ -15,7 +16,7 @@ export default function PackingSlipTemplate() {
       <div data-print-hide>
         <PageBand eyebrow="Templates · Documents" title={'Packing\nslip.'} italic={['slip.']}>
           <p className="mt-8 max-w-xl text-sm leading-relaxed text-obsidian/60">
-            Placed in every parcel. Suppliers print it with Price-Select branding only, so shipments arrive with no supplier names or prices (blind drop shipping).
+            Shown with a fictional sample order. Placed in every parcel. Suppliers print it with Price-Select branding only, so shipments arrive with no supplier names or prices (blind drop shipping).
           </p>
         </PageBand>
       </div>
@@ -59,13 +60,13 @@ export default function PackingSlipTemplate() {
           </thead>
           <tbody>
             {f.lines.map((l) => (
-              <tr key={l.productSlug} className="border-b border-[#e6e1d6]">
+              <tr key={l.lineId} className="border-b border-[#e6e1d6]">
                 <td className="py-4">
                   <span className="block size-4 border border-[#14284a]" aria-hidden />
                 </td>
                 <td className="py-4 pr-4">
                   {l.name}
-                  <span className="block text-xs text-[#5f6b78]">SKU {l.productSlug.toUpperCase()}</span>
+                  <span className="block text-xs text-[#5f6b78]">SKU {l.sku}</span>
                 </td>
                 <td className="py-4 text-right text-base font-semibold tabular-nums">{l.qty}</td>
               </tr>

@@ -183,7 +183,7 @@ export function DataTable<T>({ rows, columns, rowKey, empty = 'Nothing to show y
 export function Sparkline({ data, className }: { data: number[]; className?: string }) {
   const max = Math.max(...data)
   const min = Math.min(...data)
-  const pts = data.map((v, i) => `${(i / (data.length - 1)) * 80},${22 - ((v - min) / (max - min || 1)) * 20}`).join(' ')
+  const pts = data.map((v, i) => `${(i / (data.length - 1 || 1)) * 80},${22 - ((v - min) / (max - min || 1)) * 20}`).join(' ')
   return (
     <svg viewBox="0 0 80 24" className={cn('h-6 w-20', className)} aria-hidden>
       <motion.polyline points={pts} fill="none" stroke="#5420C7" strokeWidth="1.2" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.4, ease: EASE }} />
@@ -195,8 +195,8 @@ export function AreaChart({ data, format = (v) => String(v), label }: { data: { 
   const W = 640
   const H = 220
   const P = { t: 16, r: 8, b: 28, l: 8 }
-  const max = Math.max(...data.map((d) => d.value)) * 1.1
-  const x = (i: number) => P.l + (i / (data.length - 1)) * (W - P.l - P.r)
+  const max = Math.max(...data.map((d) => d.value)) * 1.1 || 1
+  const x = (i: number) => P.l + (i / (data.length - 1 || 1)) * (W - P.l - P.r)
   const y = (v: number) => P.t + (1 - v / max) * (H - P.t - P.b)
   const line = data.map((d, i) => `${i ? 'L' : 'M'}${x(i)},${y(d.value)}`).join(' ')
   const area = `${line} L${x(data.length - 1)},${H - P.b} L${x(0)},${H - P.b} Z`
@@ -237,8 +237,9 @@ export function AreaChart({ data, format = (v) => String(v), label }: { data: { 
   )
 }
 
-export function BarList({ data, format = (v) => `${v}%` }: { data: { label: string; value: number }[]; format?: (v: number) => string }) {
-  const max = Math.max(...data.map((d) => d.value))
+export function BarList({ data, format = (v) => `${v}%`, empty = 'No data yet.' }: { data: { label: string; value: number }[]; format?: (v: number) => string; empty?: string }) {
+  const max = Math.max(...data.map((d) => d.value)) || 1
+  if (!data.length) return <p className="text-sm text-slate">{empty}</p>
   return (
     <ul className="space-y-4">
       {data.map((d, i) => (

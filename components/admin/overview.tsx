@@ -2,39 +2,40 @@
 
 import Link from 'next/link'
 import { AreaChart, BarList, DataTable, MetricCard, MetricGrid, Panel, StatusBadge } from '@/components/dashboard/kit'
-import { analytics, orders } from '@/lib/data/operations'
-import { money0 } from '@/lib/format'
-import { monitoring, stats, supplierName } from './data'
+import { date, money0 } from '@/lib/format'
+import type { Order } from '@/lib/types'
+import type { adminDashboard } from '@/lib/server/services/metrics'
 import { orderColumns } from './orders'
 import { WarnRow } from './ui'
 
-export function Overview() {
-  const m = monitoring()
-  const feedIssues = m.feeds.filter((f) => f.s.feed.status !== 'healthy')
-  const recent = [...orders].sort((a, b) => b.placedAt.localeCompare(a.placedAt)).slice(0, 6)
+export type Dashboard = Awaited<ReturnType<typeof adminDashboard>>
+
+export function Overview({ data, recent, admin }: { data: Dashboard; recent: Order[]; admin: boolean }) {
+  const { stats, monitoring: m } = data
+  const feedIssues = m.feeds.filter((f) => f.status !== 'healthy')
   const attention = feedIssues.length + m.delayed.length + m.tracking.length + m.cases.length
 
   return (
     <div className="space-y-10">
       <MetricGrid cols={5}>
-        <MetricCard label="Total sales" value={stats.sales} prefix="$" hint="Excl. canceled" spark={analytics.revenueByWeek.map((d) => d.value)} />
-        <MetricCard label="Total orders" value={stats.orders} spark={analytics.ordersByWeek.map((d) => d.value)} />
+        <MetricCard label="Net sales · 180 days" value={stats.sales} prefix="$" hint="Captured minus refunded" spark={data.revenueByWeek.map((d) => d.value)} />
+        <MetricCard label="Total orders" value={stats.orders} spark={data.ordersByWeek.map((d) => d.value)} />
         <MetricCard label="Customers" value={stats.customers} />
         <MetricCard label="Approved suppliers" value={stats.suppliers} hint={`${stats.suppliersPending} applying`} />
         <MetricCard label="Products" value={stats.products} hint={`${stats.productsPending} awaiting review`} />
         <MetricCard label="Pending orders" value={stats.pending} tone={stats.pending ? 'warning' : 'default'} hint="Pending + confirmed" />
-        <MetricCard label="Return cases" value={stats.returns} />
-        <MetricCard label="Refunds" value={stats.refunds} />
-        <MetricCard label="Open support cases" value={stats.openCases} tone={stats.openCases ? 'danger' : 'default'} />
+        <MetricCard label="Return cases" value={stats.returns} hint={`${stats.openReturns} open`} />
+        <MetricCard label="Refunded orders" value={stats.refunds} hint={`${stats.failedPayments} failed payments · 30 d`} tone={stats.failedPayments ? 'warning' : 'default'} />
+        <MetricCard label="Open cases" value={stats.openCases} tone={stats.openCases ? 'danger' : 'default'} hint={`${stats.openSupport} support`} />
         <MetricCard label="Needs attention" value={attention} tone={attention ? 'danger' : 'default'} hint="Monitoring items below" />
       </MetricGrid>
 
       <div className="grid items-start gap-6 xl:grid-cols-3">
-        <Panel title="Revenue by week · demonstration series" className="xl:col-span-2">
-          <AreaChart data={analytics.revenueByWeek} label="Revenue by week" format={(v) => money0(v)} />
+        <Panel title="Net revenue by week · last 10 weeks" className="xl:col-span-2">
+          {data.revenueByWeek.some((d) => d.value) ? <AreaChart data={data.revenueByWeek} label="Revenue by week" format={(v) => money0(v)} /> : <p className="py-10 text-center text-sm text-slate">No paid orders in the last ten weeks.</p>}
         </Panel>
         <Panel title="Share of revenue by category">
-          <BarList data={analytics.byCategory} />
+          <BarList data={data.byCategory} empty="No sales recorded yet." />
         </Panel>
       </div>
 
@@ -43,33 +44,37 @@ export function Overview() {
           <h2 id="monitoring" className="font-display text-3xl font-light tracking-[-0.01em]">
             System monitoring
           </h2>
-          <p className="meta text-[0.6rem] text-slate">Demonstration snapshot · placeholder thresholds</p>
+          <p className="meta text-[0.6rem] text-slate">As of {date(data.asOf)} · thresholds from Settings, service targets</p>
         </div>
         <div className="grid items-start gap-6 lg:grid-cols-2">
           <div className="space-y-6">
             <Panel title={`Inventory feeds · ${feedIssues.length} need attention`}>
-              <ul>
-                {m.feeds.map(({ s, hours }) => (
-                  <WarnRow
-                    key={s.id}
-                    tone={s.feed.status === 'healthy' ? 'good' : s.feed.status === 'failed' ? 'bad' : 'warn'}
-                    title={
-                      <span className="flex flex-wrap items-center gap-3">
-                        {s.name} <StatusBadge status={s.feed.status} />
-                      </span>
-                    }
-                    detail={`${s.integration} · last sync ${Math.round(hours)} h ago`}
-                    href={`/admin/suppliers/${s.id}`}
-                    action={s.feed.status === 'healthy' ? 'View' : 'Resolve'}
-                  />
-                ))}
-              </ul>
+              {m.feeds.length ? (
+                <ul>
+                  {m.feeds.map((f) => (
+                    <WarnRow
+                      key={f.id}
+                      tone={f.status === 'healthy' ? 'good' : f.status === 'failed' ? 'bad' : 'warn'}
+                      title={
+                        <span className="flex flex-wrap items-center gap-3">
+                          {f.name} <StatusBadge status={f.status} />
+                        </span>
+                      }
+                      detail={`${f.integration} · ${f.hours == null ? 'never synced' : `last sync ${f.hours} h ago`}`}
+                      href={admin ? `/admin/suppliers/${f.id}` : undefined}
+                      action={f.status === 'healthy' ? 'View' : 'Resolve'}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate">No approved suppliers yet.</p>
+              )}
             </Panel>
             <Panel title={`Missing tracking · ${m.tracking.length}`}>
               {m.tracking.length ? (
                 <ul>
                   {m.tracking.map((d) => (
-                    <WarnRow key={d.f.id} title={`${d.f.id} · ${supplierName(d.f.supplierId)}`} detail={d.reason} href={`/admin/orders/${d.order.id}`} action="Chase" />
+                    <WarnRow key={d.fid} title={`${d.fid} · ${d.supplier}`} detail={d.reason} href={`/admin/orders/${d.order}`} action="Chase" />
                   ))}
                 </ul>
               ) : (
@@ -82,7 +87,7 @@ export function Overview() {
               {m.delayed.length ? (
                 <ul>
                   {m.delayed.map((d) => (
-                    <WarnRow key={d.f.id} tone="bad" title={`${d.f.id} · ${supplierName(d.f.supplierId)}`} detail={d.reason} href={`/admin/orders/${d.order.id}`} action="Act" />
+                    <WarnRow key={d.fid} tone="bad" title={`${d.fid} · ${d.supplier}`} detail={d.reason} href={`/admin/orders/${d.order}`} action="Act" />
                   ))}
                 </ul>
               ) : (
@@ -90,23 +95,27 @@ export function Overview() {
               )}
             </Panel>
             <Panel title={`Unresolved cases · ${m.cases.length}`}>
-              <ul>
-                {m.cases.map((c) => (
-                  <WarnRow
-                    key={c.id}
-                    tone={c.overdue || c.status === 'escalated' ? 'bad' : 'warn'}
-                    title={
-                      <span className="flex flex-wrap items-center gap-3">
-                        {c.id} <StatusBadge status={c.status} />
-                        {c.overdue && <StatusBadge status="overdue" tone="bad" label="Past target" />}
-                      </span>
-                    }
-                    detail={c.label}
-                    href={c.href}
-                    action="Open"
-                  />
-                ))}
-              </ul>
+              {m.cases.length ? (
+                <ul>
+                  {m.cases.map((c) => (
+                    <WarnRow
+                      key={c.id}
+                      tone={c.overdue || c.status === 'escalated' ? 'bad' : 'warn'}
+                      title={
+                        <span className="flex flex-wrap items-center gap-3">
+                          {c.id} <StatusBadge status={c.status} />
+                          {c.overdue && <StatusBadge status="overdue" tone="bad" label="Past target" />}
+                        </span>
+                      }
+                      detail={c.label}
+                      href={c.href}
+                      action="Open"
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate">No open cases.</p>
+              )}
             </Panel>
           </div>
         </div>
@@ -121,7 +130,7 @@ export function Overview() {
           </Link>
         }
       >
-        <DataTable rows={recent} columns={orderColumns} rowKey={(o) => o.id} caption="Recent orders" />
+        <DataTable rows={recent} columns={orderColumns} rowKey={(o) => o.id} caption="Recent orders" empty="No orders yet." />
       </Panel>
     </div>
   )

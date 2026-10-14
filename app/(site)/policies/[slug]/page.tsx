@@ -4,6 +4,7 @@ import { Reveal } from '@/components/motion/primitives'
 import { DemoNote, PageBand } from '@/components/site/ui'
 import { SITE } from '@/lib/site'
 import { TERMS, TERMS_INTRO, type PolicySection } from '@/lib/terms'
+import { getPublishedPolicy } from '@/lib/server/services/settings'
 
 // Policy text must be supplied by the client (legal review). Policies without supplied
 // text show structure only and never invent legal content.
@@ -17,9 +18,7 @@ const POLICIES: Record<string, { title: string; intro?: string; sections: Policy
 
 type Slug = keyof typeof POLICIES
 
-export function generateStaticParams() {
-  return Object.keys(POLICIES).map((slug) => ({ slug }))
-}
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -31,15 +30,18 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
   const { slug } = await params
   const p = POLICIES[slug as Slug]
   if (!p) notFound()
+  // An administrator-published version replaces the client-supplied default wording.
+  const published = await getPublishedPolicy(slug as 'terms' | 'privacy' | 'returns').catch(() => null)
+  const paragraphs = published?.split(/\n\s*\n/).map((x) => x.trim()).filter(Boolean)
   return (
     <>
       <PageBand eyebrow="Policies" title={p.title} crumbs={[{ href: `/policies/${slug}`, label: p.title }]} />
       <section className="section-y bg-ivory">
         <div className="container-luxe grid gap-16 lg:grid-cols-12">
           <aside className="lg:col-span-3">
-            {p.intro ? (
+            {p.intro || paragraphs?.length ? (
               <p className="text-sm leading-relaxed text-slate">
-                Questions about these terms? Contact <a className="underline underline-offset-4 break-all" href={`mailto:${SITE.email}`}>{SITE.email}</a>.
+                Questions about this policy? Contact <a className="underline underline-offset-4 break-all" href={`mailto:${SITE.email}`}>{SITE.email}</a>.
               </p>
             ) : (
               <>
@@ -51,6 +53,16 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
             )}
           </aside>
           <div className="lg:col-span-7 lg:col-start-5">
+            {paragraphs?.length ? (
+              <div className="space-y-5 text-base leading-relaxed text-slate">
+                {paragraphs.map((t, i) => (
+                  <p key={i} className="whitespace-pre-line">
+                    {t}
+                  </p>
+                ))}
+              </div>
+            ) : (
+            <>
             {p.intro && <p className="mb-12 text-lg leading-relaxed text-obsidian/80">{p.intro}</p>}
             <ol>
               {p.sections.map((s, i) => (
@@ -75,6 +87,8 @@ export default async function PolicyPage({ params }: { params: Promise<{ slug: s
                 </Reveal>
               ))}
             </ol>
+            </>
+            )}
           </div>
         </div>
       </section>
